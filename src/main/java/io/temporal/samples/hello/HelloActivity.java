@@ -22,6 +22,7 @@ package io.temporal.samples.hello;
 import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
 import io.temporal.activity.ActivityOptions;
+import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.serviceclient.WorkflowServiceStubs;
@@ -69,6 +70,10 @@ public class HelloActivity {
 
     @Override
     public String getGreeting(String name) {
+      WorkflowExecution execution =
+          Workflow.sideEffect(
+              WorkflowExecution.class,
+              () -> WorkflowExecution.newBuilder().setRunId("foo").setWorkflowId("bar").build());
       // This is a blocking call that returns only after the activity has completed.
       return activities.composeGreeting("Hello", name);
     }
