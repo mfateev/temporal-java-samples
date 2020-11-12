@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class Parallel  {
+public class Parallel {
   public Statement branches[];
 
   @JsonCreator
@@ -33,8 +33,12 @@ public class Parallel  {
     scope.run();
 
     try {
+      Promise.anyOf(results).get();
+
       // If one activity fails then all the rest will fail
-      Promise.allOf(results).get();
+      for (Promise<Void> p : results) {
+        p.get();
+      }
     } catch (RuntimeException ex) {
       // Cancel uncompleted activities
       scope.cancel();

@@ -33,7 +33,7 @@ public class ActivityInvocation {
         Workflow.newUntypedActivityStub(
             ActivityOptions.newBuilder()
                 .setStartToCloseTimeout(Duration.ofMinutes(5))
-                .setTaskQueue("dsl")
+                .setTaskQueue(this.name)
                 .build());
 
     String methodNameDescriptor =
