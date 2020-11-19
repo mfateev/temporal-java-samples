@@ -19,14 +19,10 @@
 
 package io.temporal.samples.dsl;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.module.paramnames.ParameterNamesModule;
-import io.temporal.activity.Activity;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.common.RetryOptions;
@@ -38,9 +34,13 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 /** Unit test for {@link HelloActivity}. Doesn't use an external Temporal service. */
 public class DslActivityTest {
@@ -48,6 +48,18 @@ public class DslActivityTest {
   private TestWorkflowEnvironment testEnv;
   private Worker worker;
   private WorkflowClient client;
+
+  @Rule
+  public TestWatcher watchman =
+      new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+          if (testEnv != null) {
+            System.err.println(testEnv.getDiagnostics());
+            testEnv.close();
+          }
+        }
+      };
 
   @Before
   public void setUp() {
@@ -64,12 +76,9 @@ public class DslActivityTest {
   }
 
   @Test
-  public void testMockedActivity() throws IOException {
-    worker = testEnv.newWorker("dsl");
-    worker.registerWorkflowImplementationTypes(SimpleDSLWorkflowImpl.class);
-
-    SampleActivities.SampleActivities1 activities = mock(SampleActivities.SampleActivities1.class);
-    when(activities.getInfo()).thenThrow(Activity.wrap(new IllegalArgumentException()));
+  public void testCallbackLogic() throws IOException {
+    SampleActivities.SampleActivitiesImpl1 activities =
+        new SampleActivities.SampleActivitiesImpl1();
     Worker newWorker = testEnv.newWorker("SampleActivities1");
     newWorker.registerActivitiesImplementations(activities);
 
@@ -80,7 +89,47 @@ public class DslActivityTest {
         client.newWorkflowStub(
             SimpleDSLWorkflow.class,
             WorkflowOptions.newBuilder()
-                .setRetryOptions(RetryOptions.newBuilder().setDoNotRetry().build())
+                .setRetryOptions(RetryOptions.newBuilder().setMaximumAttempts(1).build())
+                .setTaskQueue("dsl")
+                .build());
+
+    Path resourceDirectory = Paths.get("src", "test", "resources", "dsl", "workflow1.yaml");
+
+    String absolutePath = resourceDirectory.toFile().getAbsolutePath();
+
+    ObjectMapper objectMapper =
+        new ObjectMapper(new YAMLFactory()).registerModule(new ParameterNamesModule());
+    objectMapper.enable(MapperFeature.INFER_CREATOR_FROM_CONSTRUCTOR_PROPERTIES);
+    objectMapper.findAndRegisterModules();
+
+    DslWorkflow dslWorkflow = objectMapper.readValue(new File(absolutePath), DslWorkflow.class);
+    WorkflowClient.start(workflow::execute, dslWorkflow);
+
+    testEnv.sleep(Duration.ofSeconds(20));
+
+    // trigger signal
+    workflow.callback("SampleActivities1");
+  }
+
+  /*
+  @Test
+  public void testMockedActivity() throws IOException {
+    worker = testEnv.newWorker("dsl");
+    worker.registerWorkflowImplementationTypes(SimpleDSLWorkflowImpl.class);
+
+    SampleActivities.SampleActivities1 activities = mock(SampleActivities.SampleActivities1.class);
+    when(activities.getInfo()).thenThrow(ApplicationFailure.newNonRetryableFailure("test", "test"));
+    Worker newWorker = testEnv.newWorker("SampleActivities1");
+    newWorker.registerActivitiesImplementations(activities);
+
+    testEnv.start();
+
+    // Get a workflow stub using the same task queue the worker uses.
+    SimpleDSLWorkflow workflow =
+        client.newWorkflowStub(
+            SimpleDSLWorkflow.class,
+            WorkflowOptions.newBuilder()
+                .setRetryOptions(RetryOptions.newBuilder().setMaximumAttempts(1).build())
                 .setTaskQueue("dsl")
                 .build());
 
@@ -96,4 +145,6 @@ public class DslActivityTest {
     DslWorkflow dslWorkflow = objectMapper.readValue(new File(absolutePath), DslWorkflow.class);
     workflow.execute(dslWorkflow);
   }
+
+   */
 }

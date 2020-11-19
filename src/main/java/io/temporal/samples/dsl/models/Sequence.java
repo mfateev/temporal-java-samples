@@ -2,6 +2,7 @@ package io.temporal.samples.dsl.models;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.temporal.workflow.CancellationScope;
 import java.util.Map;
 
 public class Sequence {
@@ -12,9 +13,9 @@ public class Sequence {
     this.elements = elements;
   }
 
-  public void execute(Map<String, String> bindings) {
+  public void execute(Map<String, String> bindings, Map<String, CancellationScope> map) {
     for (Statement s : elements) {
-      s.execute(bindings);
+      s.execute(bindings, map);
     }
   }
 }

@@ -8,11 +8,12 @@ variables:
   arg2: value2
 
 root:
-  parallel:
-    branches:
+  sequence:
+    elements:
       - activity:
           name: SampleActivities1
           method: getInfo
+          supportCallback: true
           arguments:
             - arg1
           result: result1

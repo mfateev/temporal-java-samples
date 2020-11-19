@@ -1,8 +1,10 @@
 package io.temporal.samples.dsl;
 
 import io.temporal.activity.Activity;
+import io.temporal.activity.ActivityExecutionContext;
 import io.temporal.activity.ActivityInterface;
 import io.temporal.activity.ActivityMethod;
+import io.temporal.client.ActivityWorkerShutdownException;
 
 public class SampleActivities {
   @ActivityInterface(namePrefix = "SampleActivities1")
@@ -34,8 +36,19 @@ public class SampleActivities {
   public static class SampleActivitiesImpl1 implements SampleActivities1 {
     @Override
     public String getInfo() {
-      String name = Activity.getExecutionContext().getInfo().getActivityType();
-      return "Result_" + name;
+      ActivityExecutionContext context = Activity.getExecutionContext();
+      int test = 0;
+      while (true) {
+        try {
+          test++;
+          context.heartbeat(test);
+        } catch (ActivityWorkerShutdownException ex) {
+          System.out.println(ex.getMessage());
+          throw Activity.wrap(ex);
+        }
+      }
+      // String name = Activity.getExecutionContext().getInfo().getActivityType();
+      // return "Result_" + name;
     }
   }
 
@@ -50,6 +63,7 @@ public class SampleActivities {
   public static class SampleActivitiesImpl3 implements SampleActivities3 {
     @Override
     public String getInfo() {
+
       String name = Activity.getExecutionContext().getInfo().getActivityType();
       return "Result_" + name;
     }
