@@ -19,21 +19,29 @@
 
 package io.temporal.samples.hello;
 
+import io.temporal.api.common.v1.WorkflowExecution;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
+import io.temporal.client.WorkflowStub;
 import io.temporal.serviceclient.WorkflowServiceStubs;
 import io.temporal.worker.Worker;
 import io.temporal.worker.WorkerFactory;
 import io.temporal.workflow.Async;
+import io.temporal.workflow.CancellationScope;
+import io.temporal.workflow.ChildWorkflowCancellationType;
+import io.temporal.workflow.ChildWorkflowOptions;
 import io.temporal.workflow.Promise;
 import io.temporal.workflow.Workflow;
 import io.temporal.workflow.WorkflowInterface;
 import io.temporal.workflow.WorkflowMethod;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Demonstrates a child workflow. Requires a local instance of the Temporal server to be running.
  */
-public class HelloChild {
+public class HelloChildCancellation {
 
   static final String TASK_QUEUE = "HelloChild";
 
@@ -57,13 +65,29 @@ public class HelloChild {
     @Override
     public String getGreeting(String name) {
       // Workflows are stateful. So a new stub must be created for each new child.
-      GreetingChild child = Workflow.newChildWorkflowStub(GreetingChild.class);
+      GreetingChild child =
+          Workflow.newChildWorkflowStub(
+              GreetingChild.class,
+              ChildWorkflowOptions.newBuilder()
+                  .setCancellationType(ChildWorkflowCancellationType.WAIT_CANCELLATION_COMPLETED)
+                  .build());
 
+      List<Promise<String>> children = new ArrayList<>();
       // This is a non blocking call that returns immediately.
       // Use child.composeGreeting("Hello", name) to call synchronously.
-      Promise<String> greeting = Async.function(child::composeGreeting, "Hello", name);
-      // Do something else here.
-      return greeting.get(); // blocks waiting for the child to complete.
+      CancellationScope scope =
+          Workflow.newCancellationScope(
+              () -> {
+                Promise<String> greeting = Async.function(child::composeGreeting, "Hello", name);
+                children.add(greeting);
+              });
+      scope.run();
+      for (Promise<String> ch : children) {
+        ch.get();
+      }
+      //      Promise.allOf(children).get();
+      scope.cancel();
+      return "foo";
     }
   }
 
@@ -74,6 +98,7 @@ public class HelloChild {
   public static class GreetingChildImpl implements GreetingChild {
     @Override
     public String composeGreeting(String greeting, String name) {
+      Workflow.await(() -> false);
       return greeting + " " + name + "!";
     }
   }
@@ -98,8 +123,10 @@ public class HelloChild {
         client.newWorkflowStub(
             GreetingWorkflow.class, WorkflowOptions.newBuilder().setTaskQueue(TASK_QUEUE).build());
     // Execute a workflow waiting for it to complete.
-    String greeting = workflow.getGreeting("World");
-    System.out.println(greeting);
+    WorkflowExecution execution = WorkflowClient.start(workflow::getGreeting, "World");
+    WorkflowStub workflowStub = client.newUntypedWorkflowStub(execution, Optional.empty());
+    workflowStub.cancel();
+    System.out.println(workflowStub.getResult(String.class));
     System.exit(0);
   }
 }
