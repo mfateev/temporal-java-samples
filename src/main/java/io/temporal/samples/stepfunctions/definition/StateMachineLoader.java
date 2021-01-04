@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
@@ -35,15 +36,14 @@ public class StateMachineLoader {
 
   public static StateMachineDefinition load(Reader document) throws IOException, ParseException {
     JSONObject definition = (JSONObject) JSONValue.parseWithException(document);
-    //    System.out.println(definition);
     Map<StateName, StateDefinition> states = new HashMap<>();
     StateName startAt = new StateName((String) definition.get("StartAt"), Optional.empty());
     StateMachineDefinition stateMachine = new StateMachineDefinition(states, startAt);
-    getStates(stateMachine, (JSONObject) definition.get("States"), Optional.empty(), states);
+    addStates(stateMachine, (JSONObject) definition.get("States"), Optional.empty(), states);
     return stateMachine;
   }
 
-  private static void getStates(
+  private static void addStates(
       StateMachineDefinition stateMachine,
       JSONObject jsonStates,
       Optional<StateName> parent,
@@ -51,30 +51,43 @@ public class StateMachineLoader {
     Set<Map.Entry> entries = jsonStates.entrySet();
     for (Map.Entry entry : entries) {
       StateName name = new StateName((String) entry.getKey(), parent);
-      states.put(name, getStateDefinition(stateMachine, name, (JSONObject) entry.getValue()));
+      JSONObject value = (JSONObject) entry.getValue();
+      addStates(stateMachine, name, value, states);
     }
   }
 
-  private static StateDefinition getStateDefinition(
-      StateMachineDefinition stateMachine, StateName name, JSONObject value) {
+  private static void addStates(
+      StateMachineDefinition stateMachine,
+      StateName name,
+      JSONObject value,
+      Map<StateName, StateDefinition> states) {
     String type = (String) value.get("Type");
     String next = (String) value.get("Next");
     Optional<StateName> nextName =
         next == null ? Optional.empty() : Optional.of(new StateName(next, name.getParent()));
     boolean end = (Boolean) value.getOrDefault("End", false);
-
+    StateDefinition result;
     if (type.equals("Task")) {
       String resource = (String) value.get("Resource");
-      return new TaskStateDefinition(stateMachine, name, nextName, resource, end);
+      result = new TaskStateDefinition(stateMachine, name, nextName, resource, end);
     } else if (type.equals("Wait")) {
       int seconds = Integer.parseInt((String) value.get("Seconds"));
-      return new WaitStateDefinition(stateMachine, name, nextName, seconds, end);
+      result = new WaitStateDefinition(stateMachine, name, nextName, seconds, end);
     } else if (type.equals("Parallel")) {
       List<StateName> branchHeads = new ArrayList<>();
-      Object jsonBranches = value.get("Branches");
-      return new ParallelStateDefinition(stateMachine, name, nextName, end, branchHeads);
+      JSONArray jsonBranches = (JSONArray) value.get("Branches");
+      for (Object branch : jsonBranches) {
+        JSONObject jsonBranch = (JSONObject) branch;
+        System.out.println(branch);
+        StateName startAt = new StateName((String) jsonBranch.get("StartAt"), Optional.of(name));
+        branchHeads.add(startAt);
+        JSONObject branchStates = (JSONObject) jsonBranch.get("States");
+        addStates(stateMachine, branchStates, Optional.of(name), states);
+      }
+      result = new ParallelStateDefinition(stateMachine, name, nextName, end, branchHeads);
     } else {
       throw new UnsupportedOperationException("Task " + type + " type is not yet supported");
     }
+    states.put(name, result);
   }
 }

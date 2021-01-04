@@ -84,4 +84,14 @@ public class AmazonStatesLanguageWorkflowTest {
     String result = stub.getResult(String.class);
     assertNull(result);
   }
+
+  @Test
+  public void testParallel() {
+    WorkflowStub stub =
+        workflowClient.newUntypedWorkflowStub(
+            "SPParallel", WorkflowOptions.newBuilder().setTaskQueue(TASK_QUEUE).build());
+    stub.start(new AmazonStatesLanguageWorkflow.Input());
+    String result = stub.getResult(String.class);
+    assertNull(result);
+  }
 }

@@ -49,7 +49,9 @@ public class ParallelStateDefinition extends StateDefinition {
   @Override
   void completeChild(StateMachineEvents events, StateMachineCommands commands, StateName name) {
     int count = Integer.parseInt(commands.getVariables().get(variableName));
-    if (count == 0) {
+    System.out.println("completeChild: " + count);
+    if (count == 1) {
+      commands.setVariable(variableName, null);
       complete(events, commands);
     } else {
       commands.setVariable(variableName, String.valueOf(count - 1));

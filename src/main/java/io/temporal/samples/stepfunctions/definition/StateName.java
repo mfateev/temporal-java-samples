@@ -47,7 +47,7 @@ public final class StateName {
   }
 
   public List<String> getIds() {
-    return ids;
+    return new ArrayList<>(ids);
   }
 
   @JsonIgnore

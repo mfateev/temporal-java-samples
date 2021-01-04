@@ -1,0 +1,32 @@
+{
+  "Comment": "Parallel Example.",
+  "StartAt": "FunWithMath",
+  "States": {
+    "FunWithMath": {
+      "Type": "Parallel",
+      "End": true,
+      "Branches": [
+        {
+          "StartAt": "Add",
+          "States": {
+            "Add": {
+              "Type": "Task",
+              "Resource": "arn:aws-cn:swf:us-east-1:123456789012:task:Add",
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Subtract",
+          "States": {
+            "Subtract": {
+              "Type": "Task",
+              "Resource": "arn:aws-cn:swf:us-east-1:123456789012:task:Subtract",
+              "End": true
+            }
+          }
+        }
+      ]
+    }
+  }
+}
