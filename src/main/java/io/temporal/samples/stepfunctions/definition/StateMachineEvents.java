@@ -17,35 +17,28 @@
  *  permissions and limitations under the License.
  */
 
-package io.temporal.samples.stepfunctions;
+package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.definition.StateName;
 import java.util.List;
 import java.util.Map;
 
 public class StateMachineEvents {
-  private final String stateMachineName;
-  private final String stateMachineVersion;
-  private final List<StateName> stateCompletions;
-  private final Map<String, String> variables;
+  private String stateMachineName;
+  private List<StateName> stateCompletions;
+  private Map<String, String> variables;
+
+  /** Needed for Jackson serialization */
+  public StateMachineEvents() {}
 
   public StateMachineEvents(
-      String stateMachineName,
-      String stateMachineVersion,
-      List<StateName> stateCompletions,
-      Map<String, String> variables) {
+      String stateMachineName, List<StateName> stateCompletions, Map<String, String> variables) {
     this.stateMachineName = stateMachineName;
-    this.stateMachineVersion = stateMachineVersion;
     this.stateCompletions = stateCompletions;
     this.variables = variables;
   }
 
   public String getStateMachineName() {
     return stateMachineName;
-  }
-
-  public String getStateMachineVersion() {
-    return stateMachineVersion;
   }
 
   public List<StateName> getStateCompletions() {

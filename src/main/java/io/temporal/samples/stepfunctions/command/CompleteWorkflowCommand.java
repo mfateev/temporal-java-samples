@@ -23,6 +23,10 @@ import io.temporal.samples.stepfunctions.definition.StateName;
 import io.temporal.workflow.Promise;
 
 public class CompleteWorkflowCommand extends StateCommand {
+
+  /** Needed for Jackson serialization */
+  public CompleteWorkflowCommand() {}
+
   public CompleteWorkflowCommand(StateName name) {
     super(name);
   }

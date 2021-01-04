@@ -19,6 +19,7 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import java.util.ArrayList;
@@ -26,16 +27,30 @@ import java.util.List;
 import java.util.Optional;
 
 public final class StateName {
-  private final List<String> ids;
+  private List<String> ids;
+
+  /** Needed for Jackson serialization */
+  public StateName() {}
 
   public StateName(List<String> ids) {
     this.ids = new ArrayList<>(ids);
+  }
+
+  public StateName(String name, Optional<StateName> parent) {
+    List<String> nameIds = parent.isPresent() ? parent.get().getIds() : new ArrayList<>();
+    nameIds.add(name);
+    ids = nameIds;
+  }
+
+  public StateName(String name) {
+    this(name, Optional.empty());
   }
 
   public List<String> getIds() {
     return ids;
   }
 
+  @JsonIgnore
   public Optional<StateName> getParent() {
     if (ids.size() == 1) {
       return Optional.empty();

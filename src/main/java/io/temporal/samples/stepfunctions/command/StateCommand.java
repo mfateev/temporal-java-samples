@@ -19,11 +19,16 @@
 
 package io.temporal.samples.stepfunctions.command;
 
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.temporal.samples.stepfunctions.definition.StateName;
 import io.temporal.workflow.Promise;
 
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "@class")
 public abstract class StateCommand {
-  private final StateName name;
+  private StateName name;
+
+  /** Needed for Jackson serialization */
+  public StateCommand() {}
 
   protected StateCommand(StateName name) {
     this.name = name;

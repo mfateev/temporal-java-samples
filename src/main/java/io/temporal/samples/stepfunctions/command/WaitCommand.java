@@ -26,7 +26,10 @@ import java.time.Duration;
 
 public class WaitCommand extends StateCommand {
 
-  private final int seconds;
+  private int seconds;
+
+  /** Needed for Jackson serialization */
+  public WaitCommand() {}
 
   public WaitCommand(StateName name, int seconds) {
     super(name);

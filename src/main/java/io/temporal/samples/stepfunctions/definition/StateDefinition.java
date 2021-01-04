@@ -19,22 +19,21 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.StateMachineCommands;
-import io.temporal.samples.stepfunctions.StateMachineEvents;
+import java.util.Optional;
 
 public abstract class StateDefinition {
 
   protected final StateMachineDefinition stateMachine;
   private final StateName name;
   private final StateType type;
-  private final StateName next;
+  private final Optional<StateName> next;
   private final boolean end;
 
   protected StateDefinition(
       StateMachineDefinition stateMachine,
       StateName name,
       StateType type,
-      StateName next,
+      Optional<StateName> next,
       boolean end) {
     this.stateMachine = stateMachine;
     this.name = name;
@@ -51,7 +50,7 @@ public abstract class StateDefinition {
     return type;
   }
 
-  public StateName getNext() {
+  public Optional<StateName> getNext() {
     return next;
   }
 
@@ -64,7 +63,7 @@ public abstract class StateDefinition {
       StateDefinition parent = stateMachine.getParentDefinition(name);
       parent.completeChild(events, commands, name);
     } else {
-      stateMachine.getStateDefinition(getNext()).addCommands(events, commands);
+      stateMachine.getStateDefinition(getNext().get()).addCommands(events, commands);
     }
   }
 

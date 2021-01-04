@@ -19,9 +19,8 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.StateMachineCommands;
-import io.temporal.samples.stepfunctions.StateMachineEvents;
 import io.temporal.samples.stepfunctions.command.WaitCommand;
+import java.util.Optional;
 
 public class WaitStateDefinition extends StateDefinition {
   private final int seconds;
@@ -29,7 +28,7 @@ public class WaitStateDefinition extends StateDefinition {
   protected WaitStateDefinition(
       StateMachineDefinition stateMachine,
       StateName name,
-      StateName next,
+      Optional<StateName> next,
       int seconds,
       boolean end) {
     super(stateMachine, name, StateType.WAIT, next, end);

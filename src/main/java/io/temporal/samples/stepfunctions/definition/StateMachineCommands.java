@@ -17,7 +17,7 @@
  *  permissions and limitations under the License.
  */
 
-package io.temporal.samples.stepfunctions;
+package io.temporal.samples.stepfunctions.definition;
 
 import io.temporal.samples.stepfunctions.command.StateCommand;
 import java.util.ArrayList;
@@ -26,8 +26,11 @@ import java.util.List;
 import java.util.Map;
 
 public class StateMachineCommands {
-  private final List<StateCommand> commands;
-  private final Map<String, String> variables;
+  private List<StateCommand> commands;
+  private Map<String, String> variables;
+
+  /** Needed for Jackson serialization */
+  public StateMachineCommands() {}
 
   public StateMachineCommands(List<StateCommand> commands, Map<String, String> variables) {
     this.commands = commands;
@@ -48,5 +51,10 @@ public class StateMachineCommands {
 
   public void setVariable(String name, String value) {
     variables.put(name, value);
+  }
+
+  @Override
+  public String toString() {
+    return "StateMachineCommands{" + "commands=" + commands + ", variables=" + variables + '}';
   }
 }

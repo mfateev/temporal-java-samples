@@ -19,16 +19,15 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.StateMachineCommands;
-import io.temporal.samples.stepfunctions.StateMachineEvents;
 import io.temporal.samples.stepfunctions.command.CompleteWorkflowCommand;
+import java.util.Optional;
 
 public class RootStateDefinition extends StateDefinition {
 
   private final StateName startAt;
 
   protected RootStateDefinition(StateMachineDefinition stateMachine, StateName startAt) {
-    super(stateMachine, null, null, null, true);
+    super(stateMachine, null, null, Optional.empty(), true);
     this.startAt = startAt;
   }
 

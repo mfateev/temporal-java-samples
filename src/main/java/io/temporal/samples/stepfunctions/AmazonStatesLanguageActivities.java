@@ -20,8 +20,10 @@
 package io.temporal.samples.stepfunctions;
 
 import io.temporal.activity.ActivityInterface;
+import io.temporal.samples.stepfunctions.definition.StateMachineCommands;
+import io.temporal.samples.stepfunctions.definition.StateMachineEvents;
 
 @ActivityInterface
 public interface AmazonStatesLanguageActivities {
-  StateMachineCommands evaluate(StateMachineEvents state);
+  StateMachineCommands evaluate(StateMachineEvents events);
 }

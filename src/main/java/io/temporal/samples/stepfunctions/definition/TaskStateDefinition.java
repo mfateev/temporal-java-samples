@@ -19,9 +19,8 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.StateMachineCommands;
-import io.temporal.samples.stepfunctions.StateMachineEvents;
 import io.temporal.samples.stepfunctions.command.TaskCommand;
+import java.util.Optional;
 
 public class TaskStateDefinition extends StateDefinition {
 
@@ -30,7 +29,7 @@ public class TaskStateDefinition extends StateDefinition {
   public TaskStateDefinition(
       StateMachineDefinition stateMachine,
       StateName name,
-      StateName next,
+      Optional<StateName> next,
       String resource,
       boolean end) {
     super(stateMachine, name, StateType.TASK, next, end);

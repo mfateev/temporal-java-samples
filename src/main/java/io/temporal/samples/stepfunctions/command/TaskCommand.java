@@ -26,7 +26,10 @@ import java.time.Duration;
 
 public class TaskCommand extends StateCommand {
 
-  private final String resource;
+  private String resource;
+
+  /** Needed for Jackson serialization */
+  public TaskCommand() {}
 
   public TaskCommand(StateName name, String resource) {
     super(name);

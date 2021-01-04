@@ -19,33 +19,31 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.StateMachineCommands;
-import io.temporal.samples.stepfunctions.StateMachineEvents;
 import java.util.List;
+import java.util.Optional;
 
 public class ParallelStateDefinition extends StateDefinition {
 
-  private final List<StateName> branches;
+  private final List<StateName> branchHeads;
   private final String variableName;
 
   public ParallelStateDefinition(
       StateMachineDefinition stateMachine,
       StateName name,
-      StateType type,
-      StateName next,
+      Optional<StateName> next,
       boolean end,
-      List<StateName> branches) {
-    super(stateMachine, name, type, next, end);
-    this.branches = branches;
+      List<StateName> branchHeads) {
+    super(stateMachine, name, StateType.PARALLEL, next, end);
+    this.branchHeads = branchHeads;
     this.variableName = "parallel-" + getName();
   }
 
   @Override
   protected void addCommands(StateMachineEvents events, StateMachineCommands commands) {
-    for (StateName branch : branches) {
+    for (StateName branch : branchHeads) {
       getStateDefinition(branch).addCommands(events, commands);
     }
-    commands.setVariable(variableName, String.valueOf(branches.size()));
+    commands.setVariable(variableName, String.valueOf(branchHeads.size()));
   }
 
   @Override

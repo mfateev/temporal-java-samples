@@ -22,6 +22,8 @@ package io.temporal.samples.stepfunctions;
 import io.temporal.activity.LocalActivityOptions;
 import io.temporal.common.converter.EncodedValues;
 import io.temporal.samples.stepfunctions.command.StateCommand;
+import io.temporal.samples.stepfunctions.definition.StateMachineCommands;
+import io.temporal.samples.stepfunctions.definition.StateMachineEvents;
 import io.temporal.samples.stepfunctions.definition.StateName;
 import io.temporal.workflow.CompletablePromise;
 import io.temporal.workflow.DynamicWorkflow;
@@ -37,21 +39,7 @@ import java.util.Map;
 public class AmazonStatesLanguageWorkflow implements DynamicWorkflow {
 
   public static class Input {
-    private final String stateMachineName;
-    private final String stateMachineVersion;
-
-    public Input(String stateMachineName, String stateMachineVersion) {
-      this.stateMachineName = stateMachineName;
-      this.stateMachineVersion = stateMachineVersion;
-    }
-
-    public String getStateMachineName() {
-      return stateMachineName;
-    }
-
-    public String getStateMachineVersion() {
-      return stateMachineVersion;
-    }
+    public String foo;
   }
 
   private final AmazonStatesLanguageActivities asl =
@@ -71,9 +59,8 @@ public class AmazonStatesLanguageWorkflow implements DynamicWorkflow {
   public Object execute(EncodedValues encodedValues) {
     this.input = encodedValues.get(0, Input.class);
     while (!workflowResult.isCompleted()) {
-      StateMachineEvents events =
-          new StateMachineEvents(
-              input.getStateMachineName(), input.getStateMachineVersion(), completions, variables);
+      String name = Workflow.getInfo().getWorkflowType();
+      StateMachineEvents events = new StateMachineEvents(name, completions, variables);
       StateMachineCommands commands = asl.evaluate(events);
       updateVariables(commands.getVariables());
       executeCommands(commands.getCommands());
@@ -87,6 +74,10 @@ public class AmazonStatesLanguageWorkflow implements DynamicWorkflow {
     for (StateCommand command : commands) {
       outstandingCommands.put(command.getName(), command);
       Promise<Void> completion = command.execute();
+      if (completion == null) {
+        workflowResult.complete(null);
+        return;
+      }
       completion.handle(
           (r, e) -> {
             // TODO: Error handling

@@ -69,7 +69,6 @@ public class HelloActivity {
 
     @Override
     public String getGreeting(String name) {
-      String runId = Workflow.getInfo().getRunId();
       // This is a blocking call that returns only after the activity has completed.
       return activities.composeGreeting("Hello", name);
     }

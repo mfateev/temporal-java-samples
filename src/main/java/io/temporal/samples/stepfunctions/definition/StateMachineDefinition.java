@@ -19,19 +19,18 @@
 
 package io.temporal.samples.stepfunctions.definition;
 
-import io.temporal.samples.stepfunctions.StateMachineCommands;
-import io.temporal.samples.stepfunctions.StateMachineEvents;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 public class StateMachineDefinition {
-  private final Map<StateName, StateDefinition> states = new HashMap<>();
+
+  private final Map<StateName, StateDefinition> states;
   private final RootStateDefinition root;
 
-  public StateMachineDefinition(StateName startAt) {
+  public StateMachineDefinition(Map<StateName, StateDefinition> states, StateName startAt) {
+    this.states = states;
     this.root = new RootStateDefinition(this, startAt);
   }
 
