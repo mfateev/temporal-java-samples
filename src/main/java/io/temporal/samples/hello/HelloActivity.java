@@ -24,6 +24,7 @@ import io.temporal.activity.ActivityMethod;
 import io.temporal.activity.ActivityOptions;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
+import io.temporal.failure.ApplicationFailure;
 import io.temporal.serviceclient.WorkflowServiceStubs;
 import io.temporal.worker.Worker;
 import io.temporal.worker.WorkerFactory;
@@ -65,7 +66,7 @@ public class HelloActivity {
     private final GreetingActivities activities =
         Workflow.newActivityStub(
             GreetingActivities.class,
-            ActivityOptions.newBuilder().setScheduleToCloseTimeout(Duration.ofSeconds(2)).build());
+            ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(2)).build());
 
     @Override
     public String getGreeting(String name) {
@@ -77,7 +78,10 @@ public class HelloActivity {
   static class GreetingActivitiesImpl implements GreetingActivities {
     @Override
     public String composeGreeting(String greeting, String name) {
-      return greeting + " " + name + "!";
+      //      throw new RuntimeException("foobar");
+
+      throw ApplicationFailure.newNonRetryableFailure("foo", "bar");
+      //      return greeting + " " + name + "!";
     }
   }
 
