@@ -67,8 +67,12 @@ public class HelloActivity {
             GreetingActivities.class,
             ActivityOptions.newBuilder().setScheduleToCloseTimeout(Duration.ofSeconds(2)).build());
 
+    private boolean proceed = true;
+
     @Override
     public String getGreeting(String name) {
+      Workflow.sleep(Duration.parse("PT5S"));
+      Workflow.await(Duration.parse("PT5S"), () -> proceed);
       // This is a blocking call that returns only after the activity has completed.
       return activities.composeGreeting("Hello", name);
     }
