@@ -30,6 +30,8 @@ import io.temporal.workflow.Workflow;
 import io.temporal.workflow.WorkflowInterface;
 import io.temporal.workflow.WorkflowMethod;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Sample Temporal workflow that executes a single workflow activity.
@@ -80,7 +82,7 @@ public class HelloActivity {
   public interface GreetingActivities {
 
     // Define your activity method which can be called during workflow execution
-    String composeGreeting(String greeting, String name);
+    Map<String, Duration> composeGreeting(String greeting, String name);
   }
 
   // Define the workflow implementation which implements our getGreeting workflow method.
@@ -104,15 +106,18 @@ public class HelloActivity {
     @Override
     public String getGreeting(String name) {
       // This is a blocking call that returns only after the activity has completed.
-      return activities.composeGreeting("Hello", name);
+      return activities.composeGreeting("Hello", name).toString();
     }
   }
 
   /** Simple activity implementation, that concatenates two strings. */
   static class GreetingActivitiesImpl implements GreetingActivities {
     @Override
-    public String composeGreeting(String greeting, String name) {
-      return greeting + " " + name + "!";
+    public Map<String, Duration> composeGreeting(String greeting, String name) {
+      Map<String, Duration> result = new HashMap<>();
+      result.put("foo", Duration.ofSeconds(1));
+      result.put("bar", Duration.ofDays(1));
+      return result;
     }
   }
 
