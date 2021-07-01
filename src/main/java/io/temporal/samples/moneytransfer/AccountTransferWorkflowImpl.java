@@ -33,6 +33,7 @@ public class AccountTransferWorkflowImpl implements AccountTransferWorkflow {
   public void transfer(
       String fromAccountId, String toAccountId, String referenceId, int amountCents) {
     account.withdraw(fromAccountId, referenceId, amountCents);
+    Workflow.sleep(Duration.ofDays(1));
     account.deposit(toAccountId, referenceId, amountCents);
   }
 }

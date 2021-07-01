@@ -28,6 +28,7 @@ import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.testing.TestWorkflowEnvironment;
 import io.temporal.worker.Worker;
+import java.time.Duration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +62,9 @@ public class TransferWorkflowTest {
     AccountTransferWorkflow workflow =
         workflowClient.newWorkflowStub(AccountTransferWorkflow.class, options);
     long starty = testEnv.currentTimeMillis();
-    workflow.transfer("account1", "account2", "reference1", 123);
+    WorkflowClient.start(workflow::transfer, "account1", "account2", "reference1", 123);
+    testEnv.sleep(Duration.ofDays(2));
+    //    workflow.transfer("account1", "account2", "reference1", 123);
     verify(activities).withdraw(eq("account1"), eq("reference1"), eq(123));
     verify(activities).deposit(eq("account2"), eq("reference1"), eq(123));
     long duration = testEnv.currentTimeMillis() - starty;
