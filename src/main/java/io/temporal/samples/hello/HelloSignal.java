@@ -19,6 +19,9 @@
 
 package io.temporal.samples.hello;
 
+import io.temporal.activity.ActivityInterface;
+import io.temporal.activity.ActivityMethod;
+import io.temporal.activity.ActivityOptions;
 import io.temporal.client.WorkflowClient;
 import io.temporal.client.WorkflowOptions;
 import io.temporal.serviceclient.WorkflowServiceStubs;
@@ -28,6 +31,7 @@ import io.temporal.workflow.SignalMethod;
 import io.temporal.workflow.Workflow;
 import io.temporal.workflow.WorkflowInterface;
 import io.temporal.workflow.WorkflowMethod;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,6 +46,22 @@ public class HelloSignal {
 
   // Define the workflow unique id
   static final String WORKFLOW_ID = "HelloSignalWorkflow";
+
+  @ActivityInterface
+  public interface GreetingActivities {
+
+    // Define your activity method which can be called during workflow execution
+    @ActivityMethod(name = "greet")
+    String composeGreeting(String greeting, String name);
+  }
+
+  /** Simple activity implementation, that concatenates two strings. */
+  static class GreetingActivitiesImpl implements HelloActivity.GreetingActivities {
+    @Override
+    public String composeGreeting(String greeting, String name) {
+      return greeting + " " + name + "!";
+    }
+  }
 
   /**
    * The Workflow Definition's Interface must contain one method annotated with @WorkflowMethod.
@@ -76,6 +96,11 @@ public class HelloSignal {
   // Define the workflow implementation which implements the getGreetings workflow method.
   public static class GreetingWorkflowImpl implements GreetingWorkflow {
 
+    private final HelloActivity.GreetingActivities activities =
+        Workflow.newActivityStub(
+            HelloActivity.GreetingActivities.class,
+            ActivityOptions.newBuilder().setStartToCloseTimeout(Duration.ofSeconds(2)).build());
+
     // messageQueue holds up to 10 messages (received from signals)
     List<String> messageQueue = new ArrayList<>(10);
     boolean exit = false;
@@ -98,7 +123,8 @@ public class HelloSignal {
 
     @Override
     public void waitForName(String name) {
-      messageQueue.add("Hello " + name + "!");
+      String n = activities.composeGreeting("Hello", name);
+      messageQueue.add("Hello " + name + "_" + n + "!");
     }
 
     @Override
@@ -139,6 +165,8 @@ public class HelloSignal {
      */
     worker.registerWorkflowImplementationTypes(GreetingWorkflowImpl.class);
 
+    worker.registerActivitiesImplementations(new GreetingActivitiesImpl());
+
     /*
      * Start all the workers registered for a specific task queue.
      * The started workers then start polling for workflows and activities.
@@ -174,6 +202,7 @@ public class HelloSignal {
     // Send the second signal to our workflow
     workflowById.waitForName("Universe");
 
+    Thread.sleep(5000);
     // Now let's send our exit signal to the workflow
     workflowById.exit();
 
