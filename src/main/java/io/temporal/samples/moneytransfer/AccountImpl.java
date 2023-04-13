@@ -33,6 +33,11 @@ public class AccountImpl implements Account {
     System.out.printf(
         "Deposit to %s of %d cents requested. ReferenceId=%s\n",
         accountId, amountCents, referenceId);
+    try {
+      Thread.sleep(4000);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     //    throw new RuntimeException("simulated");
   }
 }

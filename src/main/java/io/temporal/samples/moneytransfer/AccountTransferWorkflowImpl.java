@@ -30,9 +30,10 @@ public class AccountTransferWorkflowImpl implements AccountTransferWorkflow {
   private final Account account = Workflow.newActivityStub(Account.class, options);
 
   @Override
-  public void transfer(
+  public int transfer(
       String fromAccountId, String toAccountId, String referenceId, int amountCents) {
     account.withdraw(fromAccountId, referenceId, amountCents);
     account.deposit(toAccountId, referenceId, amountCents);
+    return Workflow.newRandom().nextInt();
   }
 }
