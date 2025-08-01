@@ -29,7 +29,7 @@ public class RetryOnSignalInterceptorTest {
     }
 
     @Override
-    public void compensate(Exception e) {}
+    public void compensate(String e) {}
   }
 
   private final TestActivityImpl testActivity = new TestActivityImpl();
