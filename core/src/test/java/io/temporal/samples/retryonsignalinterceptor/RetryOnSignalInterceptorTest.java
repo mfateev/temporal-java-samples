@@ -27,6 +27,9 @@ public class RetryOnSignalInterceptorTest {
         throw ApplicationFailure.newFailure("simulated", "type1");
       }
     }
+
+    @Override
+    public void compensate(Exception e) {}
   }
 
   private final TestActivityImpl testActivity = new TestActivityImpl();
