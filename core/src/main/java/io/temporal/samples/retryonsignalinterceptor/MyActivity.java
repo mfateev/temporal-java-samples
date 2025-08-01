@@ -5,4 +5,6 @@ import io.temporal.activity.ActivityInterface;
 @ActivityInterface
 public interface MyActivity {
   void execute();
+
+  void compensate(Exception e);
 }

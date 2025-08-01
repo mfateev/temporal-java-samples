@@ -22,12 +22,14 @@ public class RetryOnSignalWorkflowOutboundCallsInterceptor
   private class ActivityRetryState<R> {
     private final ActivityInput<R> input;
     private final CompletablePromise<R> asyncResult = Workflow.newPromise();
+    private final Functions.Proc1<Exception> compensation;
     private CompletablePromise<Action> action;
     private Exception lastFailure;
     private int attempt;
 
-    private ActivityRetryState(ActivityInput<R> input) {
+    private ActivityRetryState(ActivityInput<R> input, Functions.Proc1<Exception> compensation) {
       this.input = input;
+      this.compensation = compensation;
     }
 
     ActivityOutput<R> execute() {
@@ -50,6 +52,15 @@ public class RetryOnSignalWorkflowOutboundCallsInterceptor
                   pendingActivities.remove(this);
                   asyncResult.complete(r);
                   return null;
+                }
+                if (compensation != null) {
+                  // If there is a compensation function, call it with the failure.
+                  try {
+                    compensation.apply(failure);
+                  } catch (RuntimeException e) {
+                    asyncResult.completeExceptionally(e);
+                    return null;
+                  }
                 }
                 // Asynchronously executes requested action when signal is received.
                 lastFailure = failure;
@@ -108,6 +119,13 @@ public class RetryOnSignalWorkflowOutboundCallsInterceptor
    */
   private final List<ActivityRetryState<?>> pendingActivities = new ArrayList<>();
 
+  /**
+   * Map of compensations for activities that are waiting for an action. The key is the activity
+   * correlation ID.
+   */
+  private static final WorkflowThreadLocal<Functions.Proc1<Exception>> compensation =
+      new WorkflowThreadLocal<>();
+
   public RetryOnSignalWorkflowOutboundCallsInterceptor(WorkflowOutboundCallsInterceptor next) {
     super(next);
     // Registers the listener for retry and fail signals as well as getPendingActivitiesStatus
@@ -144,8 +162,17 @@ public class RetryOnSignalWorkflowOutboundCallsInterceptor
 
   @Override
   public <R> ActivityOutput<R> executeActivity(ActivityInput<R> input) {
-    ActivityRetryState<R> retryState = new ActivityRetryState<R>(input);
+    var c = compensation.get();
+    ActivityRetryState<R> retryState = new ActivityRetryState<R>(input, c);
     pendingActivities.add(retryState);
     return retryState.execute();
+  }
+
+  static void setCompensation(Functions.Proc1<Exception> c) {
+    compensation.set(c);
+  }
+
+  static void cleanCompensation() {
+    compensation.set(null);
   }
 }

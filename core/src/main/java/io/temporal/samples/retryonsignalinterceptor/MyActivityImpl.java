@@ -23,4 +23,9 @@ public class MyActivityImpl implements MyActivity {
       throw ApplicationFailure.newFailure("simulated", "type1");
     }
   }
+
+  @Override
+  public void compensate(Exception e) {
+    // Compensation is a no-op in this example.
+  }
 }
