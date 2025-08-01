@@ -6,5 +6,5 @@ import io.temporal.activity.ActivityInterface;
 public interface MyActivity {
   void execute();
 
-  void compensate(Exception e);
+  void compensate(String e);
 }

@@ -19,7 +19,8 @@ public class MyWorkflowImpl implements MyWorkflow {
 
   @Override
   public void execute() {
-    try (var __ = ActivityCompensation.newCompensation((e) -> activity.compensate(e))) {
+    try (var __ =
+        ActivityCompensation.newCompensation((e) -> activity.compensate(e.getMessage()))) {
       activity.execute();
     } catch (Exception e) {
       throw Workflow.wrap(e);

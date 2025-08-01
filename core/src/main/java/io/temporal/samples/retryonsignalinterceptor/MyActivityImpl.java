@@ -25,7 +25,7 @@ public class MyActivityImpl implements MyActivity {
   }
 
   @Override
-  public void compensate(Exception e) {
+  public void compensate(String e) {
     // Compensation is a no-op in this example.
   }
 }
