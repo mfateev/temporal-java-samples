@@ -1,6 +1,19 @@
+apply plugin: 'org.jetbrains.kotlin.jvm'
+
+// Configure Kotlin to target the same JVM version as Java
+kotlin {
+    jvmToolchain(11)
+}
+
 dependencies {
     // Temporal SDK
     implementation "io.temporal:temporal-sdk:$javaSDKVersion"
+
+    // Temporal Kotlin SDK (for Kotlin samples)
+    implementation 'io.temporal:temporal-kotlin'
+
+    // Kotlin coroutines
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
     implementation "io.temporal:temporal-opentracing:$javaSDKVersion"
     testImplementation("io.temporal:temporal-testing:$javaSDKVersion")
 

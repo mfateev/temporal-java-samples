@@ -2,3 +2,10 @@ rootProject.name = 'temporal-java-samples'
 include 'core'
 include 'springboot'
 include 'springboot-basic'
+
+// Include the temporal-kotlin SDK from the main SDK repository
+includeBuild('../../sdk-java-root/sdk-kotlin') {
+    dependencySubstitution {
+        substitute module('io.temporal:temporal-kotlin') using project(':temporal-kotlin')
+    }
+}
