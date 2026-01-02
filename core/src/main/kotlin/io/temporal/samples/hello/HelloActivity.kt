@@ -23,6 +23,7 @@ package io.temporal.samples.hello
 import io.temporal.activity.ActivityInterface
 import io.temporal.activity.ActivityMethod
 import io.temporal.kotlin.activity.KActivityOptions
+import io.temporal.kotlin.activity.registerSuspendActivities
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
@@ -31,18 +32,20 @@ import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Sample Temporal Workflow Definition that executes a single Activity.
+ * Sample Temporal Workflow Definition demonstrating mixed activity interfaces.
  *
- * This is the Kotlin equivalent of the Java HelloActivity sample, demonstrating:
- * - KWorkflowClient for type-safe workflow execution
- * - KWorkerFactory for Kotlin coroutine support in workflows
- * - KWorkflow.executeActivity for activity invocation
- * - Suspend workflow methods for natural coroutine integration
+ * This sample shows how the Kotlin SDK handles activity interfaces with both
+ * synchronous and suspend methods:
+ * - Synchronous activity: Regular function, runs on thread pool
+ * - Suspend activity: Kotlin coroutine, supports non-blocking operations
+ *
+ * Use `registerSuspendActivities` to register implementations with suspend methods.
  */
 object HelloActivity {
 
@@ -54,113 +57,68 @@ object HelloActivity {
 
     private val log = LoggerFactory.getLogger(HelloActivity::class.java)
 
-    /**
-     * The Workflow Definition's Interface must contain one method annotated with @WorkflowMethod.
-     *
-     * For Kotlin workflows using the Kotlin SDK, the workflow method should be a suspend function.
-     * Workflow Definitions should not contain any heavyweight computations, non-deterministic
-     * code, network calls, database operations, etc. Those things should be handled by Activities.
-     */
     @WorkflowInterface
     interface GreetingWorkflow {
-
-        /**
-         * This is the method that is executed when the Workflow Execution is started.
-         * The Workflow Execution completes when this method finishes execution.
-         */
         @WorkflowMethod
         suspend fun getGreeting(name: String): String
     }
 
     /**
-     * This is the Activity Definition's Interface. Activities are building blocks of any Temporal
-     * Workflow and contain any business logic that could perform long running computation, network
-     * calls, etc.
-     *
-     * Annotating Activity Definition methods with @ActivityMethod is optional.
+     * Activity interface with both synchronous and suspend methods.
      */
     @ActivityInterface
     interface GreetingActivities {
-
-        // Define your activity method which can be called during workflow execution
-        @ActivityMethod(name = "greet")
+        /** Synchronous activity - runs on thread pool */
         fun composeGreeting(greeting: String, name: String): String
+
+        /** Suspend activity - runs as coroutine */
+        suspend fun formatGreeting(greeting: String): String
     }
 
-    /**
-     * Define the workflow implementation which implements our getGreeting workflow method.
-     */
     class GreetingWorkflowImpl : GreetingWorkflow {
+        private val options = KActivityOptions(startToCloseTimeout = 2.seconds)
 
         override suspend fun getGreeting(name: String): String {
-            // Execute the activity using type-safe method reference
-            // In Kotlin SDK, this is a suspending call that returns when activity completes
+            // Call synchronous activity
+            val greeting = KWorkflow.executeActivity(
+                GreetingActivities::composeGreeting, options, "Hello", name
+            )
+            // Call suspend activity
             return KWorkflow.executeActivity(
-                GreetingActivities::composeGreeting,
-                KActivityOptions(
-                    // The "startToCloseTimeout" option sets the overall timeout that our workflow
-                    // is willing to wait for the activity to complete.
-                    startToCloseTimeout = 2.seconds
-                ),
-                "Hello",
-                name
+                GreetingActivities::formatGreeting, options, greeting
             )
         }
     }
 
-    /**
-     * Simple activity implementation, that concatenates two strings.
-     */
     class GreetingActivitiesImpl : GreetingActivities {
-
         override fun composeGreeting(greeting: String, name: String): String {
-            log.info("Composing greeting...")
-            return "$greeting $name!"
+            log.info("Sync activity: composing greeting")
+            return "$greeting $name"
+        }
+
+        override suspend fun formatGreeting(greeting: String): String {
+            log.info("Suspend activity: formatting greeting")
+            delay(10) // Simulate async operation
+            return "$greeting!"
         }
     }
 
-    /**
-     * With our Workflow and Activities defined, we can now start execution.
-     * The main method starts the worker and then the workflow.
-     */
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        // Get a Workflow service stub.
         val service = WorkflowServiceStubs.newLocalServiceStubs()
-
-        // Create a Kotlin workflow client - provides suspend functions and type-safe APIs
         val client = KWorkflowClient(service)
-
-        // Create a Kotlin worker factory - enables Kotlin coroutine support for workflows
         val factory = KWorkerFactory(client)
-
-        // Create a worker for the task queue
         val worker = factory.newWorker(TASK_QUEUE)
 
-        // Register our Kotlin workflow implementation with the worker
         worker.registerWorkflowImplementationType<GreetingWorkflowImpl>()
+        // Use registerSuspendActivities for interfaces with suspend methods
+        worker.registerSuspendActivities(GreetingActivitiesImpl())
 
-        // Register our Activity Types with the Worker
-        worker.registerActivitiesImplementations(GreetingActivitiesImpl())
-
-        // Start all the workers
         factory.start()
 
-        // Define workflow options
-        val options = KWorkflowOptions(
-            workflowId = WORKFLOW_ID,
-            taskQueue = TASK_QUEUE
-        )
+        val options = KWorkflowOptions(workflowId = WORKFLOW_ID, taskQueue = TASK_QUEUE)
+        val greeting = client.executeWorkflow(GreetingWorkflow::getGreeting, options, "World")
 
-        // Execute the workflow using the type-safe Kotlin API
-        // This is a suspend function that starts the workflow and waits for the result
-        val greeting = client.executeWorkflow(
-            GreetingWorkflow::getGreeting,
-            options,
-            "World"
-        )
-
-        // Display workflow execution results
         println(greeting)
         System.exit(0)
     }
