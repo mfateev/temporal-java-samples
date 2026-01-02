@@ -21,7 +21,7 @@
 package io.temporal.samples.hello
 
 import io.temporal.activity.ActivityInterface
-import io.temporal.activity.ActivityMethod
+import io.temporal.kotlin.activity.KActivity
 import io.temporal.kotlin.activity.KActivityOptions
 import io.temporal.kotlin.activity.registerSuspendActivities
 import io.temporal.kotlin.client.KWorkflowClient
@@ -34,7 +34,6 @@ import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import org.slf4j.LoggerFactory
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -49,13 +48,8 @@ import kotlin.time.Duration.Companion.seconds
  */
 object HelloActivity {
 
-    // Define the task queue name
     const val TASK_QUEUE = "HelloActivityTaskQueue"
-
-    // Define our workflow unique id
     const val WORKFLOW_ID = "HelloActivityWorkflow"
-
-    private val log = LoggerFactory.getLogger(HelloActivity::class.java)
 
     @WorkflowInterface
     interface GreetingWorkflow {
@@ -92,12 +86,12 @@ object HelloActivity {
 
     class GreetingActivitiesImpl : GreetingActivities {
         override fun composeGreeting(greeting: String, name: String): String {
-            log.info("Sync activity: composing greeting")
+            KActivity.logger().info("Sync activity: composing greeting")
             return "$greeting $name"
         }
 
         override suspend fun formatGreeting(greeting: String): String {
-            log.info("Suspend activity: formatting greeting")
+            KActivity.logger().info("Suspend activity: formatting greeting")
             delay(10) // Simulate async operation
             return "$greeting!"
         }
