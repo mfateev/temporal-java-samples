@@ -23,7 +23,6 @@ package io.temporal.samples.hello
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
-import io.temporal.kotlin.workflow.KChildWorkflowOptions
 import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.worker.registerWorkflowImplementationType
@@ -84,9 +83,9 @@ object HelloChild {
         override suspend fun getGreeting(name: String): String {
             // Execute the child workflow using direct method reference
             // The Kotlin SDK extracts the workflow type from the interface automatically
+            // Options are optional - use default options when not specified
             return KWorkflow.executeChildWorkflow(
                 GreetingChild::composeGreeting,
-                KChildWorkflowOptions(),
                 "Hello",
                 name
             )
