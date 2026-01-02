@@ -186,7 +186,7 @@ object HelloUpdate {
 
         // Get Java client for update operations
         // Note: Updates are sent synchronously from the client side
-        val javaClient = client.javaClient
+        val javaClient = client.workflowClient
         val workflow = javaClient.newWorkflowStub(GreetingWorkflow::class.java, WORKFLOW_ID)
 
         // Send the first workflow update
@@ -229,7 +229,7 @@ object HelloUpdate {
         // Get the workflow result using the Kotlin handle
         val greetings = handle.result()
 
-        println(greetings)
+        println(greetings.joinToString("\n"))
         System.exit(0)
     }
 }

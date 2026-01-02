@@ -27,12 +27,13 @@ import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.QueryMethod
+import io.temporal.workflow.Workflow
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 /**
  * Sample Temporal Workflow Definition that demonstrates how to Query a Workflow.
@@ -41,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
  * - KWorkflowClient for type-safe workflow execution and querying
  * - KWorkerFactory for automatic Kotlin coroutine support
  * - KWorkflowHandle for querying running workflows
- * - KWorkflow.delay for workflow-safe time operations
+ * - Workflow.sleep for workflow-safe time operations
  */
 object HelloQuery {
 
@@ -79,10 +80,10 @@ object HelloQuery {
             // We set the value of greeting to "Hello" first
             greeting = "Hello $name!"
 
-            // Sleep for 2 seconds using KWorkflow.delay
-            // Note: Inside a workflow method you should always use KWorkflow.delay
-            // rather than standard Kotlin delay
-            KWorkflow.delay(2.seconds)
+            // Sleep for 2 seconds using Workflow.sleep
+            // Note: Inside a workflow method you should always use Workflow.sleep
+            // rather than standard Kotlin delay to ensure determinism
+            Workflow.sleep(Duration.ofSeconds(2))
 
             // After two seconds we change the value of our greeting to "Bye"
             greeting = "Bye $name!"

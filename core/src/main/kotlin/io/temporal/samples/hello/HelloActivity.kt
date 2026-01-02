@@ -22,9 +22,7 @@ package io.temporal.samples.hello
 
 import io.temporal.activity.ActivityInterface
 import io.temporal.activity.ActivityMethod
-import io.temporal.kotlin.activity.KActivity
 import io.temporal.kotlin.activity.KActivityOptions
-import io.temporal.kotlin.activity.registerSuspendActivities
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
@@ -33,192 +31,137 @@ import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Sample Temporal Workflow Definition that executes a suspend Activity.
+ * Sample Temporal Workflow Definition that executes a single Activity.
  *
- * This is the recommended approach for Kotlin activities, using suspend functions
- * to enable natural use of coroutines for I/O-bound operations like HTTP calls,
- * database queries, or any other async Kotlin libraries.
- *
- * Key features demonstrated:
- * - Defining suspend activity interfaces
- * - Non-blocking heartbeating with KActivity.suspendHeartbeat()
- * - Using coroutines (delay, async I/O) in activities
- * - Registering suspend activities with the worker
- *
- * For traditional blocking activities, see HelloSyncActivity.
+ * This is the Kotlin equivalent of the Java HelloActivity sample, demonstrating:
+ * - KWorkflowClient for type-safe workflow execution
+ * - KWorkerFactory for Kotlin coroutine support in workflows
+ * - KWorkflow.executeActivity for activity invocation
+ * - Suspend workflow methods for natural coroutine integration
  */
 object HelloActivity {
 
+    // Define the task queue name
     const val TASK_QUEUE = "HelloActivityTaskQueue"
+
+    // Define our workflow unique id
     const val WORKFLOW_ID = "HelloActivityWorkflow"
 
     private val log = LoggerFactory.getLogger(HelloActivity::class.java)
 
     /**
-     * Workflow interface that calls our suspend activity.
+     * The Workflow Definition's Interface must contain one method annotated with @WorkflowMethod.
+     *
+     * For Kotlin workflows using the Kotlin SDK, the workflow method should be a suspend function.
+     * Workflow Definitions should not contain any heavyweight computations, non-deterministic
+     * code, network calls, database operations, etc. Those things should be handled by Activities.
      */
     @WorkflowInterface
-    interface DataProcessingWorkflow {
-
-        @WorkflowMethod
-        suspend fun processData(itemCount: Int): String
-    }
-
-    /**
-     * Suspend Activity Interface.
-     *
-     * Activities defined as suspend functions can use Kotlin coroutines naturally:
-     * - Use delay() instead of Thread.sleep()
-     * - Call suspend functions from coroutine-based HTTP clients (Ktor, etc.)
-     * - Use KActivity.suspendHeartbeat() for non-blocking heartbeats
-     *
-     * Note: The suspend keyword is part of the interface definition.
-     */
-    @ActivityInterface
-    interface DataActivities {
+    interface GreetingWorkflow {
 
         /**
-         * A suspend activity that processes items with progress reporting.
-         * Demonstrates non-blocking delays and heartbeating.
+         * This is the method that is executed when the Workflow Execution is started.
+         * The Workflow Execution completes when this method finishes execution.
          */
-        @ActivityMethod(name = "ProcessItems")
-        suspend fun processItems(itemCount: Int): ProcessingResult
+        @WorkflowMethod
+        suspend fun getGreeting(name: String): String
     }
 
     /**
-     * Result of the data processing activity.
+     * This is the Activity Definition's Interface. Activities are building blocks of any Temporal
+     * Workflow and contain any business logic that could perform long running computation, network
+     * calls, etc.
+     *
+     * Annotating Activity Definition methods with @ActivityMethod is optional.
      */
-    data class ProcessingResult(
-        val itemsProcessed: Int,
-        val duration: Long,
-        val processorThread: String
-    )
+    @ActivityInterface
+    interface GreetingActivities {
+
+        // Define your activity method which can be called during workflow execution
+        @ActivityMethod(name = "greet")
+        fun composeGreeting(greeting: String, name: String): String
+    }
 
     /**
-     * Workflow implementation that executes the suspend activity.
+     * Define the workflow implementation which implements our getGreeting workflow method.
      */
-    class DataProcessingWorkflowImpl : DataProcessingWorkflow {
+    class GreetingWorkflowImpl : GreetingWorkflow {
 
-        override suspend fun processData(itemCount: Int): String {
-            // Use string-based API for suspend activities
-            // Note: Method references for suspend activities use KSuspendFunction types
-            // which require explicit API support
-            val result = KWorkflow.executeActivity<ProcessingResult>(
-                "ProcessItems",
+        override suspend fun getGreeting(name: String): String {
+            // Execute the activity using type-safe method reference
+            // In Kotlin SDK, this is a suspending call that returns when activity completes
+            return KWorkflow.executeActivity(
+                GreetingActivities::composeGreeting,
                 KActivityOptions(
-                    startToCloseTimeout = 60.seconds,
-                    // Enable heartbeat timeout so the server detects activity health
-                    heartbeatTimeout = 10.seconds
+                    // The "startToCloseTimeout" option sets the overall timeout that our workflow
+                    // is willing to wait for the activity to complete.
+                    startToCloseTimeout = 2.seconds
                 ),
-                itemCount
-            )
-
-            return "Processed ${result.itemsProcessed} items in ${result.duration}ms " +
-                "on thread: ${result.processorThread}"
-        }
-    }
-
-    /**
-     * Suspend Activity Implementation.
-     *
-     * This implementation uses Kotlin coroutines:
-     * - delay() for non-blocking waits (simulating I/O operations)
-     * - KActivity.suspendHeartbeat() for non-blocking progress reporting
-     *
-     * The activity runs on a coroutine dispatcher separate from the Java SDK's
-     * activity executor, allowing efficient use of threads during I/O waits.
-     */
-    class DataActivitiesImpl : DataActivities {
-
-        override suspend fun processItems(itemCount: Int): ProcessingResult {
-            val startTime = System.currentTimeMillis()
-            val info = KActivity.getInfo()
-            log.info("Starting suspend activity ${info.activityId}, processing $itemCount items")
-
-            // Process items with progress heartbeating
-            for (i in 1..itemCount) {
-                // Simulate async I/O operation (e.g., HTTP call, DB query)
-                // In a real implementation, this could be:
-                //   - httpClient.get(url).body()
-                //   - database.query(sql)
-                //   - fileChannel.read()
-                delay(100.milliseconds)
-
-                // Report progress using non-blocking heartbeat
-                // The heartbeat details can be retrieved on retry for resumability
-                val progress = Progress(
-                    currentItem = i,
-                    totalItems = itemCount,
-                    percentComplete = (i * 100) / itemCount
-                )
-                KActivity.suspendHeartbeat(progress)
-
-                log.info("Processed item $i/$itemCount (${progress.percentComplete}%)")
-            }
-
-            val duration = System.currentTimeMillis() - startTime
-            log.info("Suspend activity completed in ${duration}ms")
-
-            return ProcessingResult(
-                itemsProcessed = itemCount,
-                duration = duration,
-                processorThread = Thread.currentThread().name
+                "Hello",
+                name
             )
         }
     }
 
     /**
-     * Progress data for heartbeating.
-     * This can be retrieved on retry using KActivity.getHeartbeatDetails<Progress>()
+     * Simple activity implementation, that concatenates two strings.
      */
-    data class Progress(
-        val currentItem: Int,
-        val totalItems: Int,
-        val percentComplete: Int
-    )
+    class GreetingActivitiesImpl : GreetingActivities {
+
+        override fun composeGreeting(greeting: String, name: String): String {
+            log.info("Composing greeting...")
+            return "$greeting $name!"
+        }
+    }
 
     /**
-     * Main entry point that starts the worker and executes the workflow.
+     * With our Workflow and Activities defined, we can now start execution.
+     * The main method starts the worker and then the workflow.
      */
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
+        // Get a Workflow service stub.
         val service = WorkflowServiceStubs.newLocalServiceStubs()
+
+        // Create a Kotlin workflow client - provides suspend functions and type-safe APIs
         val client = KWorkflowClient(service)
+
+        // Create a Kotlin worker factory - enables Kotlin coroutine support for workflows
         val factory = KWorkerFactory(client)
 
+        // Create a worker for the task queue
         val worker = factory.newWorker(TASK_QUEUE)
 
-        // Register the workflow
-        worker.registerWorkflowImplementationType<DataProcessingWorkflowImpl>()
+        // Register our Kotlin workflow implementation with the worker
+        worker.registerWorkflowImplementationType<GreetingWorkflowImpl>()
 
-        // Register suspend activities using the special registration method
-        // This enables coroutine-based execution for suspend functions
-        worker.registerSuspendActivities(DataActivitiesImpl())
+        // Register our Activity Types with the Worker
+        worker.registerActivitiesImplementations(GreetingActivitiesImpl())
 
+        // Start all the workers
         factory.start()
-        log.info("Worker started on task queue: $TASK_QUEUE")
 
-        // Execute the workflow
+        // Define workflow options
         val options = KWorkflowOptions(
             workflowId = WORKFLOW_ID,
             taskQueue = TASK_QUEUE
         )
 
-        log.info("Starting workflow to process 5 items...")
-        val result = client.executeWorkflow(
-            DataProcessingWorkflow::processData,
+        // Execute the workflow using the type-safe Kotlin API
+        // This is a suspend function that starts the workflow and waits for the result
+        val greeting = client.executeWorkflow(
+            GreetingWorkflow::getGreeting,
             options,
-            5  // Process 5 items
+            "World"
         )
 
-        println("Result: $result")
+        // Display workflow execution results
+        println(greeting)
         System.exit(0)
     }
 }
