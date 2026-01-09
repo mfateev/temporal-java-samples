@@ -29,7 +29,6 @@ import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
 import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
-import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.workflow.SignalMethod
 import io.temporal.workflow.UpdateMethod
 import io.temporal.workflow.UpdateValidatorMethod
@@ -167,7 +166,7 @@ object HelloUpdate {
         val worker = factory.newWorker(TASK_QUEUE)
 
         // Register the workflow implementation
-        worker.registerWorkflowImplementationType<GreetingWorkflowImpl>()
+        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
 
         // Register activities
         worker.registerActivitiesImplementations(HelloActivity.GreetingActivitiesImpl())

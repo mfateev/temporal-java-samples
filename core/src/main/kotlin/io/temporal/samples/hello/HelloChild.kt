@@ -25,7 +25,6 @@ import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
 import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
-import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.runBlocking
@@ -120,8 +119,8 @@ object HelloChild {
         val worker = factory.newWorker(TASK_QUEUE)
 
         // Register the parent and child workflow implementations
-        worker.registerWorkflowImplementationType<GreetingWorkflowImpl>()
-        worker.registerWorkflowImplementationType<GreetingChildImpl>()
+        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
+        worker.registerWorkflowImplementationTypes<GreetingChildImpl>()
 
         // Start all workers
         factory.start()

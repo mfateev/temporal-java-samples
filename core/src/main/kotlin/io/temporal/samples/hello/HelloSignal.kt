@@ -23,7 +23,6 @@ package io.temporal.samples.hello
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
-import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.SignalMethod
@@ -129,7 +128,7 @@ object HelloSignal {
         val worker = factory.newWorker(TASK_QUEUE)
 
         // Register the workflow implementation
-        worker.registerWorkflowImplementationType<GreetingWorkflowImpl>()
+        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
 
         // Start all workers
         factory.start()

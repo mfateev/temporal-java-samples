@@ -29,7 +29,6 @@ import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
 import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
-import io.temporal.worker.registerWorkflowImplementationType
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.delay
@@ -104,7 +103,7 @@ object HelloActivity {
         val factory = KWorkerFactory(client)
         val worker = factory.newWorker(TASK_QUEUE)
 
-        worker.registerWorkflowImplementationType<GreetingWorkflowImpl>()
+        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
         // Use registerSuspendActivities for interfaces with suspend methods
         worker.registerSuspendActivities(GreetingActivitiesImpl())
 
