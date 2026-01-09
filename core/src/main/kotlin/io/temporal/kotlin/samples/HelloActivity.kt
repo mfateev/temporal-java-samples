@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package io.temporal.samples.hello
+package io.temporal.kotlin.samples
 
 import io.temporal.activity.ActivityInterface
 import io.temporal.kotlin.activity.KActivity
@@ -110,7 +110,7 @@ object HelloActivity {
         factory.start()
 
         val options = KWorkflowOptions(workflowId = WORKFLOW_ID, taskQueue = TASK_QUEUE)
-        val greeting = client.executeWorkflow(GreetingWorkflow::getGreeting, options, "World")
+        val greeting = client.executeWorkflow(GreetingWorkflow::getGreeting, options, "Kotlin")
 
         println(greeting)
         System.exit(0)

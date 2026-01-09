@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package io.temporal.samples.hello
+package io.temporal.kotlin.samples
 
 import io.temporal.activity.ActivityInterface
 import io.temporal.kotlin.activity.KActivityOptions

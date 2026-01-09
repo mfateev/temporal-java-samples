@@ -18,8 +18,11 @@
  * limitations under the License.
  */
 
-package io.temporal.samples.hello
+package io.temporal.kotlin.samples
 
+import io.temporal.activity.ActivityInterface
+import io.temporal.activity.ActivityMethod
+import io.temporal.kotlin.activity.KLocalActivityOptions
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
@@ -28,63 +31,65 @@ import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.runBlocking
+import kotlin.time.Duration.Companion.seconds
 
 /**
- * Sample Temporal Workflow Definition that demonstrates the execution of a Child Workflow.
+ * Hello World Temporal workflow that executes a single local activity.
  *
- * Child workflows allow you to group your Workflow logic into small logical and reusable
- * units that solve a particular problem. They can be typically reused by multiple other Workflows.
+ * Some Activities are very short lived and do not need the queuing semantic, flow
+ * control, rate limiting and routing capabilities. For these Temporal supports so called local
+ * Activity feature. Local Activities are executed in the same worker process as the Workflow that
+ * invoked them. Consider using local Activities for functions that are:
  *
- * This is the Kotlin equivalent of the Java HelloChild sample, demonstrating:
+ * - no longer than a few seconds
+ * - do not require global rate limiting
+ * - do not require routing to specific workers or pools of workers
+ * - can be implemented in the same binary as the Workflow that invokes them
+ *
+ * The main benefit of local Activities is that they are much more efficient in utilizing
+ * Temporal service resources and have much lower latency overhead comparing to the usual Activity
+ * invocation.
+ *
+ * This is the Kotlin equivalent of the Java HelloLocalActivity sample, demonstrating:
  * - KWorkflowClient for type-safe workflow execution
  * - KWorkerFactory for automatic Kotlin coroutine support
- * - KWorkflow.async for parallel child workflow execution
+ * - KWorkflow.newLocalActivityStub for local activity stubs
+ * - KWorkflow.executeLocalActivity for local activity execution
  */
-object HelloChild {
+object HelloLocalActivity {
 
-    // Define the task queue name
-    const val TASK_QUEUE = "HelloChildTaskQueue"
-
-    // Define the workflow unique id
-    const val WORKFLOW_ID = "HelloChildWorkflow"
+    const val TASK_QUEUE = "HelloLocalActivity"
 
     /**
-     * Define the parent workflow interface.
+     * The Workflow Definition's Interface.
      */
     @WorkflowInterface
     interface GreetingWorkflow {
 
-        /**
-         * Define the parent workflow method. This method is executed when the workflow is started.
-         */
         @WorkflowMethod
         suspend fun getGreeting(name: String): String
     }
 
     /**
-     * Define the child workflow Interface.
+     * Activity interface.
      */
-    @WorkflowInterface
-    interface GreetingChild {
+    @ActivityInterface
+    interface GreetingActivities {
 
-        /**
-         * Define the child workflow method.
-         */
-        @WorkflowMethod
-        suspend fun composeGreeting(greeting: String, name: String): String
+        @ActivityMethod
+        fun composeGreeting(greeting: String, name: String): String
     }
 
     /**
-     * Define the parent workflow implementation.
+     * GreetingWorkflow implementation that calls a local activity.
      */
     class GreetingWorkflowImpl : GreetingWorkflow {
 
         override suspend fun getGreeting(name: String): String {
-            // Execute the child workflow using direct method reference
-            // The Kotlin SDK extracts the workflow type from the interface automatically
-            // Options are optional - use default options when not specified
-            return KWorkflow.executeChildWorkflow(
-                GreetingChild::composeGreeting,
+            // Execute the local activity using direct method reference
+            return KWorkflow.executeLocalActivity(
+                GreetingActivities::composeGreeting,
+                KLocalActivityOptions(startToCloseTimeout = 2.seconds),
                 "Hello",
                 name
             )
@@ -92,18 +97,15 @@ object HelloChild {
     }
 
     /**
-     * Define the child workflow implementation.
+     * Local activity implementation.
      */
-    class GreetingChildImpl : GreetingChild {
+    class GreetingLocalActivityImpl : GreetingActivities {
 
-        override suspend fun composeGreeting(greeting: String, name: String): String {
+        override fun composeGreeting(greeting: String, name: String): String {
             return "$greeting $name!"
         }
     }
 
-    /**
-     * With the workflow and child workflow defined, we can now start execution.
-     */
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
         // Get a Workflow service stub
@@ -118,27 +120,27 @@ object HelloChild {
         // Create a worker for the task queue
         val worker = factory.newWorker(TASK_QUEUE)
 
-        // Register the parent and child workflow implementations
+        // Register the workflow implementation
         worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-        worker.registerWorkflowImplementationTypes<GreetingChildImpl>()
+
+        // Register activities
+        worker.registerActivitiesImplementations(GreetingLocalActivityImpl())
 
         // Start all workers
         factory.start()
 
         // Define workflow options
         val options = KWorkflowOptions(
-            workflowId = WORKFLOW_ID,
             taskQueue = TASK_QUEUE
         )
 
-        // Execute our parent workflow using the type-safe Kotlin API
+        // Execute our workflow using the type-safe Kotlin API
         val greeting = client.executeWorkflow(
             GreetingWorkflow::getGreeting,
             options,
             "World"
         )
 
-        // Display the parent workflow execution results
         println(greeting)
         System.exit(0)
     }

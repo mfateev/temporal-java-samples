@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package io.temporal.samples.hello
+package io.temporal.kotlin.samples
 
 import com.google.common.base.Throwables
 import io.temporal.client.WorkflowUpdateException

@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-package io.temporal.samples.hello
+package io.temporal.kotlin.samples
 
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
