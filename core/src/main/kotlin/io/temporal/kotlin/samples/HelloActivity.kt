@@ -42,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
  * - Synchronous activity: Regular function, runs on thread pool
  * - Suspend activity: Kotlin coroutine, supports non-blocking operations
  *
- * Use `registerActivities` to register implementations with suspend methods.
+ * Use `registerActivitiesImplementations` to register implementations with suspend methods.
  */
 object HelloActivity {
 
@@ -103,8 +103,8 @@ object HelloActivity {
         val worker = factory.newWorker(TASK_QUEUE)
 
         worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-        // Use registerActivities for interfaces with suspend methods
-        worker.registerActivities(GreetingActivitiesImpl())
+        // Use registerActivitiesImplementations for interfaces with suspend methods
+        worker.registerActivitiesImplementations(GreetingActivitiesImpl())
 
         factory.start()
 
