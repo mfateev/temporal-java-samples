@@ -23,7 +23,6 @@ package io.temporal.kotlin.samples
 import io.temporal.activity.ActivityInterface
 import io.temporal.kotlin.activity.KActivity
 import io.temporal.kotlin.activity.KActivityOptions
-import io.temporal.kotlin.activity.registerSuspendActivities
 import io.temporal.kotlin.client.KWorkflowClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
@@ -43,7 +42,7 @@ import kotlin.time.Duration.Companion.seconds
  * - Synchronous activity: Regular function, runs on thread pool
  * - Suspend activity: Kotlin coroutine, supports non-blocking operations
  *
- * Use `registerSuspendActivities` to register implementations with suspend methods.
+ * Use `registerActivities` to register implementations with suspend methods.
  */
 object HelloActivity {
 
@@ -104,8 +103,8 @@ object HelloActivity {
         val worker = factory.newWorker(TASK_QUEUE)
 
         worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-        // Use registerSuspendActivities for interfaces with suspend methods
-        worker.registerSuspendActivities(GreetingActivitiesImpl())
+        // Use registerActivities for interfaces with suspend methods
+        worker.registerActivities(GreetingActivitiesImpl())
 
         factory.start()
 
