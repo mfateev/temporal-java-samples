@@ -20,19 +20,17 @@
 
 package io.temporal.kotlin.samples
 
-import io.temporal.kotlin.client.KWorkflowClient
+import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.worker.KWorkerFactory
-import io.temporal.kotlin.workflow.KWorkflow
 import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.QueryMethod
-import io.temporal.workflow.Workflow
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import java.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Sample Temporal Workflow Definition that demonstrates how to Query a Workflow.
@@ -41,7 +39,7 @@ import kotlin.time.Duration.Companion.milliseconds
  * - KWorkflowClient for type-safe workflow execution and querying
  * - KWorkerFactory for automatic Kotlin coroutine support
  * - KWorkflowHandle for querying running workflows
- * - Workflow.sleep for workflow-safe time operations
+ * - Kotlin coroutines delay() for workflow-safe time operations
  */
 object HelloQuery {
 
@@ -53,6 +51,9 @@ object HelloQuery {
 
     /**
      * The Workflow Definition's Interface.
+     *
+     * This workflow uses Kotlin suspend functions and coroutines delay()
+     * for workflow-safe time operations.
      */
     @WorkflowInterface
     interface GreetingWorkflow {
@@ -79,10 +80,9 @@ object HelloQuery {
             // We set the value of greeting to "Hello" first
             greeting = "Hello $name!"
 
-            // Sleep for 2 seconds using Workflow.sleep
-            // Note: Inside a workflow method you should always use Workflow.sleep
-            // rather than standard Kotlin delay to ensure determinism
-            Workflow.sleep(Duration.ofSeconds(2))
+            // Sleep for 2 seconds using Kotlin coroutines delay
+            // The workflow dispatcher intercepts this and converts it to a Temporal timer
+            delay(2.seconds)
 
             // After two seconds we change the value of our greeting to "Bye"
             greeting = "Bye $name!"
@@ -102,7 +102,7 @@ object HelloQuery {
         val service = WorkflowServiceStubs.newLocalServiceStubs()
 
         // Create a Kotlin workflow client
-        val client = KWorkflowClient(service)
+        val client = KClient(service)
 
         // Create a Kotlin worker factory - automatically enables Kotlin coroutine support
         val factory = KWorkerFactory(client)
@@ -125,8 +125,8 @@ object HelloQuery {
         // Start workflow and get a typed handle for interaction
         val handle = client.startWorkflow(
             GreetingWorkflow::createGreeting,
-            options,
-            "World"
+            "World",
+            options
         )
 
         // Query our workflow to get the current value of greeting using type-safe API
