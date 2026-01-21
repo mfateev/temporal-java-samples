@@ -23,11 +23,12 @@ package io.temporal.kotlin.samples
 import io.temporal.activity.ActivityInterface
 import io.temporal.activity.ActivityMethod
 import io.temporal.kotlin.activity.KLocalActivityOptions
-import io.temporal.kotlin.client.KWorkflowClient
+import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
-import io.temporal.kotlin.worker.KWorkerFactory
+import io.temporal.kotlin.common.kargs
+import io.temporal.kotlin.worker.KWorker
+import io.temporal.kotlin.worker.KWorkerOptions
 import io.temporal.kotlin.workflow.KWorkflow
-import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.runBlocking
@@ -89,9 +90,8 @@ object HelloLocalActivity {
             // Execute the local activity using direct method reference
             return KWorkflow.executeLocalActivity(
                 GreetingActivities::composeGreeting,
-                KLocalActivityOptions(startToCloseTimeout = 2.seconds),
-                "Hello",
-                name
+                kargs("Hello", name),
+                KLocalActivityOptions(startToCloseTimeout = 2.seconds)
             )
         }
     }
@@ -108,37 +108,26 @@ object HelloLocalActivity {
 
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        // Get a Workflow service stub
-        val service = WorkflowServiceStubs.newLocalServiceStubs()
+        val client = KClient.connect()
 
-        // Create a Kotlin workflow client
-        val client = KWorkflowClient(service)
-
-        // Create a Kotlin worker factory - automatically enables Kotlin coroutine support
-        val factory = KWorkerFactory(client)
-
-        // Create a worker for the task queue
-        val worker = factory.newWorker(TASK_QUEUE)
-
-        // Register the workflow implementation
-        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-
-        // Register activities
-        worker.registerActivitiesImplementations(GreetingLocalActivityImpl())
-
-        // Start all workers
-        factory.start()
+        val worker = KWorker(
+            client,
+            KWorkerOptions(
+                taskQueue = TASK_QUEUE,
+                workflows = listOf(GreetingWorkflowImpl::class),
+                activities = listOf(GreetingLocalActivityImpl())
+            )
+        )
+        worker.start()
 
         // Define workflow options
-        val options = KWorkflowOptions(
-            taskQueue = TASK_QUEUE
-        )
+        val options = KWorkflowOptions(taskQueue = TASK_QUEUE)
 
         // Execute our workflow using the type-safe Kotlin API
         val greeting = client.executeWorkflow(
             GreetingWorkflow::getGreeting,
-            options,
-            "World"
+            "World",
+            options
         )
 
         println(greeting)

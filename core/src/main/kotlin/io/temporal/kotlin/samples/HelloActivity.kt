@@ -23,11 +23,12 @@ package io.temporal.kotlin.samples
 import io.temporal.activity.ActivityInterface
 import io.temporal.kotlin.activity.KActivity
 import io.temporal.kotlin.activity.KActivityOptions
-import io.temporal.kotlin.client.KWorkflowClient
+import io.temporal.kotlin.common.kargs
+import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
-import io.temporal.kotlin.worker.KWorkerFactory
+import io.temporal.kotlin.worker.KWorker
+import io.temporal.kotlin.worker.KWorkerOptions
 import io.temporal.kotlin.workflow.KWorkflow
-import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.delay
@@ -73,11 +74,11 @@ object HelloActivity {
         override suspend fun getGreeting(name: String): String {
             // Call synchronous activity
             val greeting = KWorkflow.executeActivity(
-                GreetingActivities::composeGreeting, options, "Hello", name
+                GreetingActivities::composeGreeting, kargs("Hello", name), options
             )
             // Call suspend activity
             return KWorkflow.executeActivity(
-                GreetingActivities::formatGreeting, options, greeting
+                GreetingActivities::formatGreeting, greeting, options
             )
         }
     }
@@ -97,19 +98,20 @@ object HelloActivity {
 
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        val service = WorkflowServiceStubs.newLocalServiceStubs()
-        val client = KWorkflowClient(service)
-        val factory = KWorkerFactory(client)
-        val worker = factory.newWorker(TASK_QUEUE)
+        val client = KClient.connect()
 
-        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-        // Use registerActivitiesImplementations for interfaces with suspend methods
-        worker.registerActivitiesImplementations(GreetingActivitiesImpl())
-
-        factory.start()
+        val worker = KWorker(
+            client,
+            KWorkerOptions(
+                taskQueue = TASK_QUEUE,
+                workflows = listOf(GreetingWorkflowImpl::class),
+                activities = listOf(GreetingActivitiesImpl())
+            )
+        )
+        worker.start()
 
         val options = KWorkflowOptions(workflowId = WORKFLOW_ID, taskQueue = TASK_QUEUE)
-        val greeting = client.executeWorkflow(GreetingWorkflow::getGreeting, options, "Kotlin")
+        val greeting = client.executeWorkflow(GreetingWorkflow::getGreeting, "Kotlin", options)
 
         println(greeting)
         System.exit(0)

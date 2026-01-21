@@ -20,11 +20,12 @@
 
 package io.temporal.kotlin.samples
 
-import io.temporal.kotlin.client.KWorkflowClient
+import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
-import io.temporal.kotlin.worker.KWorkerFactory
+import io.temporal.kotlin.common.kargs
+import io.temporal.kotlin.worker.KWorker
+import io.temporal.kotlin.worker.KWorkerOptions
 import io.temporal.kotlin.workflow.KWorkflow
-import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.runBlocking
@@ -85,8 +86,7 @@ object HelloChild {
             // Options are optional - use default options when not specified
             return KWorkflow.executeChildWorkflow(
                 GreetingChild::composeGreeting,
-                "Hello",
-                name
+                kargs("Hello", name)
             )
         }
     }
@@ -106,24 +106,16 @@ object HelloChild {
      */
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        // Get a Workflow service stub
-        val service = WorkflowServiceStubs.newLocalServiceStubs()
+        val client = KClient.connect()
 
-        // Create a Kotlin workflow client
-        val client = KWorkflowClient(service)
-
-        // Create a Kotlin worker factory - automatically enables Kotlin coroutine support
-        val factory = KWorkerFactory(client)
-
-        // Create a worker for the task queue
-        val worker = factory.newWorker(TASK_QUEUE)
-
-        // Register the parent and child workflow implementations
-        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-        worker.registerWorkflowImplementationTypes<GreetingChildImpl>()
-
-        // Start all workers
-        factory.start()
+        val worker = KWorker(
+            client,
+            KWorkerOptions(
+                taskQueue = TASK_QUEUE,
+                workflows = listOf(GreetingWorkflowImpl::class, GreetingChildImpl::class)
+            )
+        )
+        worker.start()
 
         // Define workflow options
         val options = KWorkflowOptions(
@@ -134,8 +126,8 @@ object HelloChild {
         // Execute our parent workflow using the type-safe Kotlin API
         val greeting = client.executeWorkflow(
             GreetingWorkflow::getGreeting,
-            options,
-            "World"
+            "World",
+            options
         )
 
         // Display the parent workflow execution results

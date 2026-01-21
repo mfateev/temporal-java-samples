@@ -24,11 +24,12 @@ import com.google.common.base.Throwables
 import io.temporal.client.WorkflowUpdateException
 import io.temporal.failure.ApplicationFailure
 import io.temporal.kotlin.activity.KActivityOptions
-import io.temporal.kotlin.client.KWorkflowClient
+import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
-import io.temporal.kotlin.worker.KWorkerFactory
+import io.temporal.kotlin.common.kargs
+import io.temporal.kotlin.worker.KWorker
+import io.temporal.kotlin.worker.KWorkerOptions
 import io.temporal.kotlin.workflow.KWorkflow
-import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.SignalMethod
 import io.temporal.workflow.UpdateMethod
 import io.temporal.workflow.UpdateValidatorMethod
@@ -128,9 +129,8 @@ object HelloUpdate {
             // Update handlers are suspend functions, so we can use KWorkflow.executeActivity
             val greeting = KWorkflow.executeActivity(
                 HelloActivity.GreetingActivities::composeGreeting,
-                KActivityOptions(startToCloseTimeout = 2.seconds),
-                "Hello",
-                name
+                kargs("Hello", name),
+                KActivityOptions(startToCloseTimeout = 2.seconds)
             )
             messageQueue.add(greeting)
 
@@ -153,26 +153,17 @@ object HelloUpdate {
 
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        // Get a Workflow service stub
-        val service = WorkflowServiceStubs.newLocalServiceStubs()
+        val client = KClient.connect()
 
-        // Create a Kotlin workflow client
-        val client = KWorkflowClient(service)
-
-        // Create a Kotlin worker factory - automatically enables Kotlin coroutine support
-        val factory = KWorkerFactory(client)
-
-        // Create a worker for the task queue
-        val worker = factory.newWorker(TASK_QUEUE)
-
-        // Register the workflow implementation
-        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-
-        // Register activities
-        worker.registerActivitiesImplementations(HelloActivity.GreetingActivitiesImpl())
-
-        // Start all workers
-        factory.start()
+        val worker = KWorker(
+            client,
+            KWorkerOptions(
+                taskQueue = TASK_QUEUE,
+                workflows = listOf(GreetingWorkflowImpl::class),
+                activities = listOf(HelloActivity.GreetingActivitiesImpl())
+            )
+        )
+        worker.start()
 
         // Create the workflow options
         val workflowOptions = KWorkflowOptions(

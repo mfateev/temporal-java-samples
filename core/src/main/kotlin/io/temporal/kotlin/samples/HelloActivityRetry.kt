@@ -22,12 +22,13 @@ package io.temporal.kotlin.samples
 
 import io.temporal.activity.ActivityInterface
 import io.temporal.kotlin.activity.KActivityOptions
-import io.temporal.kotlin.client.KWorkflowClient
+import io.temporal.kotlin.client.KClient
+import io.temporal.kotlin.common.kargs
 import io.temporal.kotlin.client.KWorkflowOptions
 import io.temporal.kotlin.common.KRetryOptions
-import io.temporal.kotlin.worker.KWorkerFactory
+import io.temporal.kotlin.worker.KWorker
+import io.temporal.kotlin.worker.KWorkerOptions
 import io.temporal.kotlin.workflow.KWorkflow
-import io.temporal.serviceclient.WorkflowServiceStubs
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
 import kotlinx.coroutines.runBlocking
@@ -80,15 +81,14 @@ object HelloActivityRetry {
             // The "doNotRetry" option is a list of application failures for which retries should not be performed.
             return KWorkflow.executeActivity(
                 GreetingActivities::composeGreeting,
+                kargs("Hello", name),
                 KActivityOptions(
                     startToCloseTimeout = 10.seconds,
                     retryOptions = KRetryOptions(
                         initialInterval = 1.seconds,
                         doNotRetry = listOf(IllegalArgumentException::class.java.name)
                     )
-                ),
-                "Hello",
-                name
+                )
             )
         }
     }
@@ -123,26 +123,17 @@ object HelloActivityRetry {
 
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        // Get a Workflow service stub
-        val service = WorkflowServiceStubs.newLocalServiceStubs()
+        val client = KClient.connect()
 
-        // Create a Kotlin workflow client
-        val client = KWorkflowClient(service)
-
-        // Create a Kotlin worker factory - automatically enables Kotlin coroutine support
-        val factory = KWorkerFactory(client)
-
-        // Create a worker for the task queue
-        val worker = factory.newWorker(TASK_QUEUE)
-
-        // Register the workflow implementation
-        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-
-        // Register activities
-        worker.registerActivitiesImplementations(GreetingActivitiesImpl())
-
-        // Start all workers
-        factory.start()
+        val worker = KWorker(
+            client,
+            KWorkerOptions(
+                taskQueue = TASK_QUEUE,
+                workflows = listOf(GreetingWorkflowImpl::class),
+                activities = listOf(GreetingActivitiesImpl())
+            )
+        )
+        worker.start()
 
         // Define workflow options
         val options = KWorkflowOptions(
@@ -153,8 +144,8 @@ object HelloActivityRetry {
         // Execute our workflow using the type-safe Kotlin API
         val greeting = client.executeWorkflow(
             GreetingWorkflow::getGreeting,
-            options,
-            "World"
+            "World",
+            options
         )
 
         // Display workflow execution results

@@ -22,8 +22,8 @@ package io.temporal.kotlin.samples
 
 import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
-import io.temporal.kotlin.worker.KWorkerFactory
-import io.temporal.serviceclient.WorkflowServiceStubs
+import io.temporal.kotlin.worker.KWorker
+import io.temporal.kotlin.worker.KWorkerOptions
 import io.temporal.workflow.QueryMethod
 import io.temporal.workflow.WorkflowInterface
 import io.temporal.workflow.WorkflowMethod
@@ -36,8 +36,8 @@ import kotlin.time.Duration.Companion.seconds
  * Sample Temporal Workflow Definition that demonstrates how to Query a Workflow.
  *
  * This is the Kotlin equivalent of the Java HelloQuery sample, demonstrating:
- * - KWorkflowClient for type-safe workflow execution and querying
- * - KWorkerFactory for automatic Kotlin coroutine support
+ * - KClient.connect() for simplified client creation
+ * - KWorker with KWorkerOptions for simplified worker setup (Python/.NET pattern)
  * - KWorkflowHandle for querying running workflows
  * - Kotlin coroutines delay() for workflow-safe time operations
  */
@@ -98,23 +98,22 @@ object HelloQuery {
      */
     @JvmStatic
     fun main(args: Array<String>) = runBlocking {
-        // Get a Workflow service stub
-        val service = WorkflowServiceStubs.newLocalServiceStubs()
+        // Connect to Temporal service using environment configuration
+        // Defaults to localhost:7233 if TEMPORAL_ADDRESS is not set
+        val client = KClient.connect()
 
-        // Create a Kotlin workflow client
-        val client = KClient(service)
+        // Create worker with simplified pattern (Python/.NET style)
+        // Workflows and activities are specified at construction time
+        val worker = KWorker(
+            client,
+            KWorkerOptions(
+                taskQueue = TASK_QUEUE,
+                workflows = listOf(GreetingWorkflowImpl::class)
+            )
+        )
 
-        // Create a Kotlin worker factory - automatically enables Kotlin coroutine support
-        val factory = KWorkerFactory(client)
-
-        // Create a worker for the task queue
-        val worker = factory.newWorker(TASK_QUEUE)
-
-        // Register the workflow implementation
-        worker.registerWorkflowImplementationTypes<GreetingWorkflowImpl>()
-
-        // Start all workers
-        factory.start()
+        // Start the worker (non-blocking)
+        worker.start()
 
         // Define workflow options
         val options = KWorkflowOptions(
