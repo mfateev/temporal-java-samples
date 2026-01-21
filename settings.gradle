@@ -7,6 +7,7 @@ include 'springboot-basic'
 includeBuild('../../sdk-java-root/sdk-kotlin') {
     dependencySubstitution {
         substitute module('io.temporal:temporal-kotlin') using project(':temporal-kotlin')
+        substitute module('io.temporal:temporal-kotlin-testing') using project(':temporal-kotlin-testing')
         substitute module('io.temporal:temporal-sdk') using project(':temporal-sdk')
     }
 }

@@ -16,6 +16,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1"
     implementation "io.temporal:temporal-opentracing:$javaSDKVersion"
     testImplementation("io.temporal:temporal-testing:$javaSDKVersion")
+    testImplementation 'io.temporal:temporal-kotlin-testing'
+    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1"
 
     // Environment configuration
     implementation "io.temporal:temporal-envconfig:$javaSDKVersion"
