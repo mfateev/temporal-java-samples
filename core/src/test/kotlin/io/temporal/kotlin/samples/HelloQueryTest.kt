@@ -43,7 +43,7 @@ class HelloQueryTest {
         @JvmField
         @RegisterExtension
         val extension = kTestWorkflowExtension {
-            registerWorkflowImplementationTypes<HelloQuery.GreetingWorkflowImpl>()
+            workflowImplementationTypes = listOf(HelloQuery.GreetingWorkflowImpl::class)
         }
     }
 

@@ -43,8 +43,8 @@ class HelloLocalActivityTest {
         @JvmField
         @RegisterExtension
         val extension = kTestWorkflowExtension {
-            registerWorkflowImplementationTypes<HelloLocalActivity.GreetingWorkflowImpl>()
-            setActivityImplementations(HelloLocalActivity.GreetingLocalActivityImpl())
+            workflowImplementationTypes = listOf(HelloLocalActivity.GreetingWorkflowImpl::class)
+            activityImplementations = listOf(HelloLocalActivity.GreetingLocalActivityImpl())
         }
     }
 

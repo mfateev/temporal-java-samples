@@ -20,7 +20,7 @@
 
 package io.temporal.kotlin.samples
 
-import io.temporal.activity.Activity
+import io.temporal.kotlin.activity.KActivityContext
 import io.temporal.kotlin.activity.KDynamicActivity
 import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
@@ -91,11 +91,11 @@ object HelloDynamic {
     /**
      * Dynamic activity that handles any activity type.
      *
-     * The activity type is available via Activity.getExecutionContext().info.activityType.
+     * The activity type is available via KActivityContext.current.info.activityType.
      */
     class DynamicGreetingActivity : KDynamicActivity {
         override fun execute(args: KEncodedValues): Any? {
-            val activityType = Activity.getExecutionContext().info.activityType
+            val activityType = KActivityContext.current.info.activityType
             val greeting = args.get<String>(0)
             val name = args.get<String>(1)
             val fromType = args.get<String>(2)
@@ -128,9 +128,9 @@ object HelloDynamic {
         // Note: The workflow type "DynamicWF" is not explicitly registered
         val handle = client.signalWithStart(
             workflowType = "DynamicWF",
+            workflowArgs = arrayOf("Hello"),
             signalName = "greetingSignal",
             signalArgs = arrayOf("John"),
-            workflowArgs = arrayOf("Hello"),
             options = options,
         )
 

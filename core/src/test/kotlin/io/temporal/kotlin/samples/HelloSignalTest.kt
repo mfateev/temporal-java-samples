@@ -44,7 +44,7 @@ class HelloSignalTest {
         @JvmField
         @RegisterExtension
         val extension = kTestWorkflowExtension {
-            registerWorkflowImplementationTypes<HelloSignal.GreetingWorkflowImpl>()
+            workflowImplementationTypes = listOf(HelloSignal.GreetingWorkflowImpl::class)
         }
     }
 

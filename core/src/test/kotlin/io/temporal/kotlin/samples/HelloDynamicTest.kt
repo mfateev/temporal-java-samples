@@ -42,8 +42,8 @@ class HelloDynamicTest {
         @JvmField
         @RegisterExtension
         val testExtension = kTestWorkflowExtension {
-            registerWorkflowImplementationTypes<HelloDynamic.DynamicGreetingWorkflow>()
-            setActivityImplementations(HelloDynamic.DynamicGreetingActivity())
+            workflowImplementationTypes = listOf(HelloDynamic.DynamicGreetingWorkflow::class)
+            activityImplementations = listOf(HelloDynamic.DynamicGreetingActivity())
         }
     }
 
@@ -55,9 +55,9 @@ class HelloDynamicTest {
         // Start workflow with signal using untyped API
         val handle = client.signalWithStart(
             workflowType = "DynamicWF",
+            workflowArgs = arrayOf("Hello"),
             signalName = "greetingSignal",
             signalArgs = arrayOf("John"),
-            workflowArgs = arrayOf("Hello"),
             options = options,
         )
 

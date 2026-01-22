@@ -45,7 +45,7 @@ class HelloActivityTest {
         @JvmField
         @RegisterExtension
         val extension = kTestWorkflowExtension {
-            registerWorkflowImplementationTypes<HelloActivity.GreetingWorkflowImpl>()
+            workflowImplementationTypes = listOf(HelloActivity.GreetingWorkflowImpl::class)
             // Activities with suspend methods are registered via testEnv.registerActivitiesImplementations()
         }
     }

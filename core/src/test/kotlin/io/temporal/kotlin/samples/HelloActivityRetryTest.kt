@@ -44,8 +44,8 @@ class HelloActivityRetryTest {
         @JvmField
         @RegisterExtension
         val extension = kTestWorkflowExtension {
-            registerWorkflowImplementationTypes<HelloActivityRetry.GreetingWorkflowImpl>()
-            setActivityImplementations(HelloActivityRetry.GreetingActivitiesImpl())
+            workflowImplementationTypes = listOf(HelloActivityRetry.GreetingWorkflowImpl::class)
+            activityImplementations = listOf(HelloActivityRetry.GreetingActivitiesImpl())
         }
     }
 
