@@ -126,12 +126,12 @@ object HelloDynamic {
 
         // Start workflow with signal using untyped API
         // Note: The workflow type "DynamicWF" is not explicitly registered
-        val handle = client.signalWithStartUntypedWorkflow(
+        val handle = client.signalWithStart(
             workflowType = "DynamicWF",
             signalName = "greetingSignal",
             signalArgs = arrayOf("John"),
             workflowArgs = arrayOf("Hello"),
-            options = options
+            options = options,
         )
 
         // Wait for workflow to finish and get result
