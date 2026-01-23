@@ -21,7 +21,7 @@
 package io.temporal.kotlin.samples
 
 import io.temporal.activity.ActivityInterface
-import io.temporal.kotlin.activity.KActivity
+import io.temporal.kotlin.activity.KActivityContext
 import io.temporal.kotlin.activity.KActivityOptions
 import io.temporal.kotlin.common.kargs
 import io.temporal.kotlin.client.KClient
@@ -85,12 +85,12 @@ object HelloActivity {
 
     class GreetingActivitiesImpl : GreetingActivities {
         override fun composeGreeting(greeting: String, name: String): String {
-            KActivity.logger().info("Sync activity: composing greeting")
+            KActivityContext.current.logger().info("Sync activity: composing greeting")
             return "$greeting $name"
         }
 
         override suspend fun formatGreeting(greeting: String): String {
-            KActivity.logger().info("Suspend activity: formatting greeting")
+            KActivityContext.current.logger().info("Suspend activity: formatting greeting")
             delay(10) // Simulate async operation
             return "$greeting!"
         }
