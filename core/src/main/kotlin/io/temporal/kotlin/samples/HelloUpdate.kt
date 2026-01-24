@@ -26,6 +26,7 @@ import io.temporal.failure.ApplicationFailure
 import io.temporal.kotlin.activity.KActivityOptions
 import io.temporal.kotlin.client.KClient
 import io.temporal.kotlin.client.KWorkflowOptions
+import io.temporal.kotlin.javaWorkflowClient
 import io.temporal.kotlin.common.kargs
 import io.temporal.kotlin.worker.KWorker
 import io.temporal.kotlin.worker.KWorkerOptions
@@ -176,7 +177,7 @@ object HelloUpdate {
 
         // Get Java client for update operations
         // Note: Updates are sent synchronously from the client side
-        val javaClient = client.workflowClient
+        val javaClient = client.javaWorkflowClient
         val workflow = javaClient.newWorkflowStub(GreetingWorkflow::class.java, WORKFLOW_ID)
 
         // Send the first workflow update
