@@ -16,5 +16,3 @@ Start a local server with `temporal server start-dev` and run from the samples r
 ```
 
 The sample accepts a server target and optional workflow ID through Gradle's `--args` option.
-
-The current JVM Core build can report a worker shutdown panic after the workflow completes.
