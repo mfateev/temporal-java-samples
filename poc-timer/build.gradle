@@ -1,0 +1,29 @@
+plugins {
+    id 'application'
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+repositories {
+    maven {
+        url = uri(providers.gradleProperty('sdkJavaPocRepo')
+                .getOrElse("${rootDir}/../../sdk-java-poc/build/maven-repository"))
+        content {
+            includeModule('io.temporal', 'sdk-java-poc')
+        }
+    }
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'io.temporal:sdk-java-poc:0.1.0-SNAPSHOT'
+}
+
+application {
+    mainClass = 'io.temporal.samples.poc.HelloPocTimer'
+    applicationDefaultJvmArgs = ['-Xss16m']
+}
