@@ -4,8 +4,8 @@ This standalone Gradle build registers a workflow with `WorkerFactory`, invokes 
 typed `WorkflowClient` stub, and checks the result after two durable timers fire. Its sole
 Temporal dependency is `io.temporal:sdk-java-poc`.
 
-Use JDK 21. Build the POC with `./bootstrap.sh` and `./build.sh` in the `sdk-java-poc`
-checkout. The sample resolves the Maven artifact from the sibling POC checkout by default.
+Use JDK 21. Build the POC with `./bootstrap.sh` and `./gradlew publish` in the
+`sdk-java-poc` checkout. The sample resolves the Maven artifact from the sibling POC checkout by default.
 Use `-PsdkJavaPocRepo=/path/to/sdk-java-poc/build/maven-repository` to select another location.
 
 Start a local server with `temporal server start-dev` and run from the samples repository root.
