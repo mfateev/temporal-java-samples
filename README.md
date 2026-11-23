@@ -46,8 +46,8 @@ commands from the `sdk-java-poc` checkout.
 
 This publishes `io.temporal:sdk-java-poc:0.1.0-SNAPSHOT` to
 `sdk-java-poc/build/maven-repository`. If the checkouts are in different locations, pass
-`-PsdkJavaPocRepo=/absolute/path/to/sdk-java-poc/build/maven-repository` to the `poc-timer`
-Gradle build.
+`-PsdkJavaPocRepo=/absolute/path/to/sdk-java-poc/build/maven-repository` to Gradle. The
+`core` module uses this dependency for its existing `execute` task.
 
 ## Running Samples:
 

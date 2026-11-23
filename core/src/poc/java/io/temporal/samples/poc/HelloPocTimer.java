@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-/** Runs a workflow with two durable timers using the standalone SDK Java POC. */
+/** Runs a workflow with two durable timers using the Core-backed SDK. */
 public final class HelloPocTimer {
   private static final String TASK_QUEUE = "sdk-java-poc-timer";
 

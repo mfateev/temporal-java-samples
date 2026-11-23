@@ -1,8 +1,42 @@
+def pocJavaVersion = JavaLanguageVersion.of(21)
+def pocJava = javaToolchains.launcherFor {
+    languageVersion = pocJavaVersion
+}
+
+repositories {
+    maven {
+        url = uri(providers.gradleProperty('sdkJavaPocRepo')
+                .getOrElse("${rootProject.projectDir}/../sdk-java-poc/build/maven-repository"))
+        content {
+            includeModule('io.temporal', 'sdk-java-poc')
+        }
+    }
+}
+
+sourceSets {
+    poc {
+        java.srcDir 'src/main/java'
+        resources.srcDir 'src/main/resources'
+        // The POC does not expose Workflow.sideEffect.
+        java.exclude 'io/temporal/samples/hello/HelloSideEffect.java'
+    }
+}
+
+configurations.pocImplementation.extendsFrom(configurations.implementation)
+configurations.pocRuntimeOnly.extendsFrom(configurations.runtimeOnly)
+[configurations.pocCompileClasspath, configurations.pocRuntimeClasspath].each {
+    it.exclude group: 'io.temporal', module: 'temporal-sdk'
+    it.exclude group: 'io.temporal', module: 'temporal-serviceclient'
+}
+
 dependencies {
     // Temporal SDK
     implementation "io.temporal:temporal-sdk:$javaSDKVersion"
     implementation "io.temporal:temporal-opentracing:$javaSDKVersion"
     testImplementation("io.temporal:temporal-testing:$javaSDKVersion")
+    pocImplementation 'io.temporal:sdk-java-poc:0.1.0-SNAPSHOT'
+    pocImplementation platform('io.micrometer:micrometer-bom:1.9.9')
+    pocImplementation 'io.grpc:grpc-util'
 
     // Environment configuration
     implementation "io.temporal:temporal-envconfig:$javaSDKVersion"
@@ -57,7 +91,27 @@ dependencies {
     }
 }
 
-task execute(type: JavaExec) {
-    mainClass = findProperty("mainClass") ?: ""
-    classpath = sourceSets.main.runtimeClasspath
+tasks.named('compilePocJava', JavaCompile) {
+    javaCompiler = javaToolchains.compilerFor {
+        languageVersion = pocJavaVersion
+    }
+    options.release = pocJavaVersion.asInt()
+}
+
+tasks.register('execute', JavaExec) {
+    mainClass = providers.gradleProperty('mainClass')
+    classpath = sourceSets.poc.runtimeClasspath
+    javaLauncher = pocJava
+    jvmArgs '-Xss16m'
+}
+
+tasks.register('verifyTimerRestart', Exec) {
+    description = 'Verifies that the timer workflow completes after its worker JVM restarts.'
+    group = 'verification'
+    dependsOn tasks.named('pocClasses')
+    doFirst {
+        commandLine 'python3', 'verify_restart.py',
+                '--java', pocJava.get().executablePath.asFile.absolutePath,
+                '--classpath', sourceSets.poc.runtimeClasspath.asPath
+    }
 }

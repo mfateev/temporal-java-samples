@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the installed timer sample against a disposable server and restart its worker JVM."""
+"""Run the timer sample against a disposable server and restart its worker JVM."""
 
 import argparse
 from collections import Counter
@@ -36,7 +36,7 @@ def stop(process):
             raise
 
 
-def verify(sample, logs):
+def verify(java, classpath, logs):
     logs.mkdir(parents=True, exist_ok=True)
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))
@@ -44,6 +44,7 @@ def verify(sample, logs):
     target = f"127.0.0.1:{port}"
     workflow_id = f"poc-timer-restart-{uuid4()}"
     cleanup = ExitStack()
+    sample = [java, "-Xss16m", "-cp", classpath, "io.temporal.samples.poc.HelloPocTimer"]
 
     def launch(label, command):
         with (logs / f"{label}.log").open("w") as output:
@@ -68,8 +69,8 @@ def verify(sample, logs):
             "--port", str(port),
         ])
         wait_for_server(server, port)
-        worker = launch("worker-before", [sample, target, workflow_id, "worker"])
-        client = launch("client", [sample, target, workflow_id, "client", "10000"])
+        worker = launch("worker-before", [*sample, target, workflow_id, "worker"])
+        client = launch("client", [*sample, target, workflow_id, "client", "10000"])
 
         deadline = time.monotonic() + 30
         while time.monotonic() < deadline:
@@ -90,7 +91,7 @@ def verify(sample, logs):
             raise RuntimeError("The first timer must still be pending after the original JVM exits")
         (logs / "pending-history.json").write_text(json.dumps(pending, indent=2))
 
-        replacement = launch("worker-after", [sample, target, workflow_id, "worker"])
+        replacement = launch("worker-after", [*sample, target, workflow_id, "worker"])
         if client.wait(timeout=90) != 0:
             raise RuntimeError("Client failed to obtain the workflow result")
         if replacement.poll() is not None:
@@ -122,10 +123,9 @@ def verify(sample, logs):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    sample_root = Path(__file__).resolve().parent
-    application = "sdk-java-poc-timer-sample"
-    distribution = sample_root / "build" / "install" / application
-    parser.add_argument("--sample", type=Path, default=distribution / "bin" / application)
-    parser.add_argument("--logs", type=Path, default=sample_root / "build/restart-verification")
+    parser.add_argument("--java", required=True, help="Java 21 executable.")
+    parser.add_argument("--classpath", required=True, help="Core sample runtime classpath.")
+    parser.add_argument("--logs", type=Path,
+                        default=Path(__file__).resolve().parent / "build/restart-verification")
     args = parser.parse_args()
-    verify(str(args.sample.resolve()), args.logs)
+    verify(args.java, args.classpath, args.logs)
