@@ -27,3 +27,30 @@ application {
     mainClass = 'io.temporal.samples.poc.HelloPocTimer'
     applicationDefaultJvmArgs = ['-Xss16m']
 }
+
+sourceSets {
+    existingSamples {
+        java {
+            srcDir '../core/src/main/java'
+            include 'io/temporal/samples/hello/HelloQuery.java',
+                    'io/temporal/samples/hello/HelloSignal.java'
+        }
+    }
+}
+
+configurations.existingSamplesImplementation.extendsFrom(configurations.implementation)
+
+dependencies {
+    existingSamplesImplementation 'io.temporal:temporal-envconfig:1.32.1'
+}
+
+['HelloQuery', 'HelloSignal'].each { sample ->
+    tasks.register("run${sample}", JavaExec) {
+        group = 'application'
+        description = "Run the existing ${sample} sample with the Core-backed SDK."
+        javaLauncher = javaToolchains.launcherFor(java.toolchain)
+        classpath = sourceSets.existingSamples.runtimeClasspath
+        mainClass = "io.temporal.samples.hello.${sample}"
+        jvmArgs application.applicationDefaultJvmArgs
+    }
+}

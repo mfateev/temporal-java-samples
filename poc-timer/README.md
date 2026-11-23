@@ -26,3 +26,17 @@ same run, and the verifier checks the result and event history.
 ./gradlew -p poc-timer installDist
 python3 poc-timer/verify_restart.py
 ```
+
+## Existing samples
+
+The standalone Gradle build also compiles and runs the original `HelloQuery` and `HelloSignal`
+sources from `core/src/main/java`. They use `sdk-java-poc` for the SDK and the samples'
+`temporal-envconfig` module for client configuration.
+
+With a local Temporal server running, use these tasks from the samples repository root.
+
+```sh
+TEMPORAL_ADDRESS=127.0.0.1:7233 ./gradlew -p poc-timer runHelloQuery
+TEMPORAL_ADDRESS=127.0.0.1:7233 ./gradlew -p poc-timer runHelloSignal
+./gradlew -p poc-timer dependencies --configuration existingSamplesRuntimeClasspath
+```
