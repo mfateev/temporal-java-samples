@@ -6,21 +6,18 @@
 > Build and publish the SDK Java POC before running the Core samples on this branch.
 
 The `core` module resolves the POC SDK from a sibling `sdk-java-poc` checkout.
-The samples were verified with SDK revision `cdcfa044833e479746f0c4c8375b8f89d704cc54`.
-Use JDK 21, Python 3.11+, Git, curl, and Rustup to build it. Run these commands from the
-root of this samples checkout.
+Build from the [SDK Java POC `main` branch](https://github.com/mfateev/sdk-java-poc/tree/main).
+Use JDK 21, Python 3.11+, Git, curl, and Rustup. Run these commands from the root of this
+samples checkout.
 
 ```sh
-git clone git@github.com:mfateev/sdk-java-poc.git ../sdk-java-poc
+git clone --branch main git@github.com:mfateev/sdk-java-poc.git ../sdk-java-poc &&
 (
   cd ../sdk-java-poc &&
-  git switch --detach cdcfa044833e479746f0c4c8375b8f89d704cc54 &&
   ./bootstrap.sh &&
   ./gradlew publish
 )
 ```
-
-If you already have the sibling checkout at that revision, skip the clone and build in place.
 
 This publishes `io.temporal:sdk-java-poc:0.1.0-SNAPSHOT` to
 `sdk-java-poc/build/maven-repository`. If the checkouts are in different locations, pass
