@@ -36,13 +36,22 @@ For more options see docs [here](https://docs.temporal.io/kb/all-the-ways-to-run
 
 ## Build the SDK Java POC dependency
 
-Place the separate `sdk-java-poc` checkout next to this repository. With JDK 21, run these
-commands from the `sdk-java-poc` checkout.
+The `core` module resolves the POC SDK from a sibling `sdk-java-poc` checkout.
+The samples were verified with SDK revision `cdcfa044833e479746f0c4c8375b8f89d704cc54`.
+Once that revision is available on GitHub, use JDK 21, Python 3.11+, Git, curl, and Rustup
+to build it. Run these commands from the root of this samples checkout.
 
 ```sh
-./bootstrap.sh
-./gradlew publish
+git clone git@github.com:mfateev/sdk-java-poc.git ../sdk-java-poc
+(
+  cd ../sdk-java-poc &&
+  git switch --detach cdcfa044833e479746f0c4c8375b8f89d704cc54 &&
+  ./bootstrap.sh &&
+  ./gradlew publish
+)
 ```
+
+If you already have the sibling checkout at that revision, skip the clone and build in place.
 
 This publishes `io.temporal:sdk-java-poc:0.1.0-SNAPSHOT` to
 `sdk-java-poc/build/maven-repository`. If the checkouts are in different locations, pass
