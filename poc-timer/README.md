@@ -40,3 +40,19 @@ TEMPORAL_ADDRESS=127.0.0.1:7233 ./gradlew -p poc-timer runHelloQuery
 TEMPORAL_ADDRESS=127.0.0.1:7233 ./gradlew -p poc-timer runHelloSignal
 ./gradlew -p poc-timer dependencies --configuration existingSamplesRuntimeClasspath
 ```
+
+### Worker Versioning
+
+Use a fresh local Temporal server. Start the 1.0 worker first, then run the original starter
+and start the remaining workers in separate terminals as it prompts.
+
+```sh
+./gradlew -p poc-timer runWorkerV1
+./gradlew -p poc-timer runVersioningStarter
+./gradlew -p poc-timer runWorkerV1_1
+./gradlew -p poc-timer runWorkerV2
+```
+
+The starter attempts promotion as soon as it sees a new build. The server requires both its
+workflow and activity pollers to register first. Inspect registration with
+`temporal worker deployment describe-version --deployment-name my-deployment --build-id 1.1`.

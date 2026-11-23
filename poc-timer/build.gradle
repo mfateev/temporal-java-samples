@@ -33,7 +33,8 @@ sourceSets {
         java {
             srcDir '../core/src/main/java'
             include 'io/temporal/samples/hello/HelloQuery.java',
-                    'io/temporal/samples/hello/HelloSignal.java'
+                    'io/temporal/samples/hello/HelloSignal.java',
+                    'io/temporal/samples/workerversioning/*.java'
         }
     }
 }
@@ -42,15 +43,25 @@ configurations.existingSamplesImplementation.extendsFrom(configurations.implemen
 
 dependencies {
     existingSamplesImplementation 'io.temporal:temporal-envconfig:1.32.1'
+    existingSamplesRuntimeOnly 'org.slf4j:slf4j-simple:1.7.36'
 }
 
-['HelloQuery', 'HelloSignal'].each { sample ->
-    tasks.register("run${sample}", JavaExec) {
+def existingSampleMainClasses = [
+    runHelloQuery: 'hello.HelloQuery',
+    runHelloSignal: 'hello.HelloSignal',
+    runVersioningStarter: 'workerversioning.Starter',
+    runWorkerV1: 'workerversioning.WorkerV1',
+    runWorkerV1_1: 'workerversioning.WorkerV1_1',
+    runWorkerV2: 'workerversioning.WorkerV2',
+]
+
+existingSampleMainClasses.each { taskName, sample ->
+    tasks.register(taskName, JavaExec) {
         group = 'application'
-        description = "Run the existing ${sample} sample with the Core-backed SDK."
+        description = "Run ${sample} with the Core-backed SDK."
         javaLauncher = javaToolchains.launcherFor(java.toolchain)
         classpath = sourceSets.existingSamples.runtimeClasspath
-        mainClass = "io.temporal.samples.hello.${sample}"
+        mainClass = "io.temporal.samples.${sample}"
         jvmArgs application.applicationDefaultJvmArgs
     }
 }
