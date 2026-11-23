@@ -16,3 +16,13 @@ Start a local server with `temporal server start-dev` and run from the samples r
 ```
 
 The sample accepts a server target and optional workflow ID through Gradle's `--args` option.
+
+To verify replay across a worker restart, install the sample and run the verifier with Python 3
+and the Temporal CLI on your path. The verifier starts a disposable server and kills the first
+worker process after the server records the first timer. A replacement worker completes the
+same run, and the verifier checks the result and event history.
+
+```sh
+./gradlew -p poc-timer installDist
+python3 poc-timer/verify_restart.py
+```
