@@ -34,6 +34,21 @@ For more options see docs [here](https://docs.temporal.io/kb/all-the-ways-to-run
 
        ./gradlew build
 
+## Build the SDK Java POC dependency
+
+Place the separate `sdk-java-poc` checkout next to this repository. With JDK 21, run these
+commands from the `sdk-java-poc` checkout.
+
+```sh
+./bootstrap.sh
+./gradlew publish
+```
+
+This publishes `io.temporal:sdk-java-poc:0.1.0-SNAPSHOT` to
+`sdk-java-poc/build/maven-repository`. If the checkouts are in different locations, pass
+`-PsdkJavaPocRepo=/absolute/path/to/sdk-java-poc/build/maven-repository` to the `poc-timer`
+Gradle build.
+
 ## Running Samples:
 
 You can run both "Core" and "SpringBoot" samples from the main samples project directory.
